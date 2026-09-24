@@ -4,7 +4,9 @@
 	<img alt="Version" src="https://img.shields.io/badge/Version-1.0.0-orange">
 	<img alt="Available for" src="https://img.shields.io/badge/Available_for-KSP_1.12.5-blue">
 	<img alt="License" src="https://img.shields.io/badge/License-All_Rights_Reserved-red">
+</p>
 
+<p align=center>
 	<a href="https://github.com/aspctt/MouseAimFlightRedux"><img src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/compact-minimal/available/github_vector.svg" alt="Available on GitHub"></a>
 </p>
 
