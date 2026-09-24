@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Continues Mouse Aim Flight by tetryds and ferram4 from the last commit of the original repository, after its final release, 1.1.3. Earlier history is in [the original repository](https://github.com/tetryds/MouseAimFlight).
+## [1.0.0] - 2026-09-25
+
+First release of Mouse Aim Flight Redux. It continues Mouse Aim Flight by tetryds and ferram4 from the last commit of the original repository, after that project's final release, 1.1.3, and what is listed here is relative to that release. Earlier history is in [the original repository](https://github.com/tetryds/MouseAimFlight).
 
 ### Added
 
@@ -41,4 +43,5 @@ Continues Mouse Aim Flight by tetryds and ferram4 from the last commit of the or
 - The toolbar button was never removed on leaving flight, and each visit to flight added another listener for it that was never cleaned up
 - Control surfaces docked on while mouse aim was on were left 3.5 times too slow, and ones decoupled while it was on 3.5 times too fast, until the craft was reloaded
 
-[Unreleased]: https://github.com/aspctt/MouseAimFlightRedux/commits/main
+[Unreleased]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.0.0...HEAD
+[1.0.0]: https://github.com/aspctt/MouseAimFlightRedux/releases/tag/1.0.0
