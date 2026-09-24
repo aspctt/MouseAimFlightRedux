@@ -31,7 +31,7 @@ namespace MouseAimFlightRedux;
 /// <summary>
 /// The aim the mouse moves. Held in world space relative to the centre of mass, so it stays put as the aircraft turns,
 /// and moved in the camera's frame, so moving the mouse right always moves it right on screen. See docs/DESIGN.md,
-/// "Aim direction".
+/// "Aim point".
 /// </summary>
 sealed class AimTracker
 {

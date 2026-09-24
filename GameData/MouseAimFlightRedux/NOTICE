@@ -14,19 +14,16 @@ THIRD-PARTY COMPONENTS
 
 MOUSE AIM FLIGHT (ORIGINAL)
 
-This project continues Mouse Aim Flight by ferram4 and tetryds, whose flight
-control code derives from the AI pilot in BDArmory by BahamutoD. It is built
-from github.com/tetryds/MouseAimFlight at commit c818c848 (14 June 2021), the
-last commit in that repository. The original's LICENSE file placed its files
-under two sets of terms.
+Mouse Aim Flight Redux continues Mouse Aim Flight by ferram4 and tetryds,
+whose flight code came from the AI pilot in BDArmory by BahamutoD. It starts
+from github.com/tetryds/MouseAimFlight at commit c818c848 (14 June 2021).
 
 BSD 2-Clause License
 
-BahamutoD permitted the BDArmory-derived code to be relicensed under these
-terms (upstream commit 3f02f4f, 1 December 2015). The original LICENSE names
-MouseAimVesselModule.cs and MouseAimFlightSceneGUI.cs. Their code has since
-been adapted to this project's own controller and settings and divided among
-the files below, each of which carries these terms in its header.
+BahamutoD allowed the BDArmory-derived code to be relicensed under these terms
+(upstream commit 3f02f4f, 1 December 2015). Code from the original
+MouseAimVesselModule.cs and MouseAimFlightSceneGUI.cs lives on, adapted, in
+the files below, each carrying these terms in its header.
 
     src/MouseAimFlightRedux/MouseAimPilot.cs
     src/MouseAimFlightRedux/AimTracker.cs
@@ -62,24 +59,20 @@ the files below, each of which carries these terms in its header.
 
 All Rights Reserved
 
-Everything else in the original was All Rights Reserved, and no license was
-ever granted for it:
+The rest of the original was never licensed:
 
     Copyright (c) 2016, ferram4, tetryds
     All rights reserved.
 
-None of it is used in this project. The flight controller, flight modes,
-settings and textures it covered were replaced with new code, written from
-docs/DESIGN.md rather than from the originals. Those files are not in this
-repository or its history, are not covered by this project's LICENSE, and are
-not included in any release.
-
-Releases of the original keep their own terms.
+None of it is used here. The flight controller, flight modes, settings and
+textures were rewritten from docs/DESIGN.md, not from the originals, and none
+of those files are in this repository, its history, or any release. Releases
+of the original keep their own terms.
 
 KERBAL SPACE PROGRAM AND UNITY
 
-Mouse Aim Flight Redux is built against the assemblies of Kerbal Space Program and
-the Unity engine. Neither is bundled with or redistributed by this project.
+Built against the assemblies of Kerbal Space Program and the Unity engine.
+Neither is bundled with or redistributed by this project.
 
 
 © 2026 ASPCT
