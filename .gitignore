@@ -1,0 +1,72 @@
+###############################################################################
+# Mouse Aim Flight - .gitignore for a Kerbal Space Program plugin mod
+###############################################################################
+
+## Build output
+# Written by MSBuild beside the project and rebuilt on every compile.
+bin/
+obj/
+*.pdb
+
+## Compiled plugin
+# The post-build step copies the assembly into GameData so a linked install can
+# load it. Releases are built from source, so the copy in the tree is only ever
+# a local build and never belongs in history.
+GameData/MouseAimFlight/Plugins/*.dll
+
+## Release archives
+# Built by zipping GameData for a release. Regenerated on demand, so there is
+# no reason to carry them in history where they would bloat every clone.
+*.zip
+*.7z
+*.rar
+Release/
+Releases/
+build/
+
+## KSP and Unity assemblies
+# The plugin compiles against these from a local KSP install. They belong to
+# Squad and Unity and may not be redistributed, so a copy made for convenience
+# must never be committed.
+Assembly-CSharp*.dll
+KSPAssets.dll
+UnityEngine*.dll
+Unity.*.dll
+Mono.*.dll
+System*.dll
+mscorlib.dll
+netstandard.dll
+
+## Game logs and runtime output, wherever they land
+KSP.log
+Player.log
+output_log.txt
+*.log
+PluginData/
+
+## IDE / editor cruft
+.vs/
+.idea/
+.vscode/
+*.suo
+*.user
+*.userprefs
+*.DotSettings.user
+*.sublime-workspace
+
+## OS cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+
+###############################################################################
+# Local-only working material. NOT for publication.
+#
+# Other mods' builds and sources, kept next to the repository to compile
+# against or compare with. Other people's work under other people's terms; this
+# mod ships none of it.
+#
+# Remove an entry only if you deliberately intend to publish it.
+###############################################################################
+external-files/
+NOTES.md

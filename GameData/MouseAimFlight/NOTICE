@@ -1,0 +1,77 @@
+"Kerbal Space Program" is ©2011-2017 Squad; ©2011-2024 Take-Two Interactive
+Software, Inc. This project is in no way associated with nor endorsed by Squad
+or Take-Two Interactive.
+
+Other trademarks and registered trademarks are the property of the respective
+trademark holders.
+
+
+THIRD-PARTY COMPONENTS
+
+MOUSE AIM FLIGHT (ORIGINAL)
+
+This project continues Mouse Aim Flight by ferram4 and tetryds, whose flight
+control code derives from the AI pilot in BDArmory by BahamutoD. It is built
+from github.com/tetryds/MouseAimFlight at commit c818c848 (14 June 2021), the
+last commit in that repository. The original's LICENSE file placed its files
+under two sets of terms.
+
+BSD 2-Clause License
+
+BahamutoD permitted the BDArmory-derived code to be relicensed under these
+terms (upstream commit 3f02f4f, 1 December 2015). Both files below are named
+in the original LICENSE, and have since been adapted to this project's own
+controller and settings.
+
+    src/MouseAimFlight/MouseAimFlightSceneGUI.cs
+    src/MouseAimFlight/MouseAimVesselModule.cs
+
+    Copyright (c) 2016, BahamutoD, ferram4, tetryds
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are
+    met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+    IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+    CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+    PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+    LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+All Rights Reserved
+
+Everything else in the original was All Rights Reserved, and no license was
+ever granted for it:
+
+    Copyright (c) 2016, ferram4, tetryds
+    All rights reserved.
+
+None of it is used in this project. The flight controller, flight modes,
+settings and textures it covered were replaced with new code, written from
+docs/DESIGN.md rather than from the originals. Those files are not in this
+repository or its history, are not covered by this project's LICENSE, and are
+not included in any release.
+
+Releases of the original keep their own terms.
+
+KERBAL SPACE PROGRAM AND UNITY
+
+Mouse Aim Flight is built against the assemblies of Kerbal Space Program and
+the Unity engine. Neither is bundled with or redistributed by this project.
+
+
+© 2026 ASPCT

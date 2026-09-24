@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!--
+		KSPRoot is the Kerbal Space Program install the plugin compiles against.
+		Set it in MouseAimFlight.csproj.user beside this file, which git ignores,
+		or as an environment variable:
+
+		<Project>
+			<PropertyGroup>
+				<KSPRoot>C:\Path\To\Kerbal Space Program</KSPRoot>
+			</PropertyGroup>
+		</Project>
+	-->
+
+	<PropertyGroup>
+		<TargetFramework>net472</TargetFramework>
+		<AssemblyName>MouseAimFlight</AssemblyName>
+		<RootNamespace>MouseAimFlight</RootNamespace>
+		<Version>2.0.0</Version>
+		<LangVersion>12.0</LangVersion>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	</PropertyGroup>
+
+	<!-- Registers the plugin with KSP under its own name and version, so other mods can declare KSPAssemblyDependency on it. -->
+	<ItemGroup>
+		<AssemblyAttribute Include="KSPAssembly">
+			<_Parameter1>MouseAimFlight</_Parameter1>
+			<_Parameter2>$([System.Version]::Parse('$(Version)').Major)</_Parameter2>
+			<_Parameter2_IsLiteral>true</_Parameter2_IsLiteral>
+			<_Parameter3>$([System.Version]::Parse('$(Version)').Minor)</_Parameter3>
+			<_Parameter3_IsLiteral>true</_Parameter3_IsLiteral>
+			<_Parameter4>$([System.Version]::Parse('$(Version)').Build)</_Parameter4>
+			<_Parameter4_IsLiteral>true</_Parameter4_IsLiteral>
+		</AssemblyAttribute>
+	</ItemGroup>
+
+	<!-- KSP and Unity load these themselves, so they are never copied to the output. -->
+	<ItemGroup>
+		<Reference Include="Assembly-CSharp" HintPath="$(KSPRoot)\KSP_x64_Data\Managed\Assembly-CSharp.dll" Private="false" />
+		<Reference Include="UnityEngine" HintPath="$(KSPRoot)\KSP_x64_Data\Managed\UnityEngine.dll" Private="false" />
+		<Reference Include="UnityEngine.AnimationModule" HintPath="$(KSPRoot)\KSP_x64_Data\Managed\UnityEngine.AnimationModule.dll" Private="false" />
+		<Reference Include="UnityEngine.CoreModule" HintPath="$(KSPRoot)\KSP_x64_Data\Managed\UnityEngine.CoreModule.dll" Private="false" />
+		<Reference Include="UnityEngine.IMGUIModule" HintPath="$(KSPRoot)\KSP_x64_Data\Managed\UnityEngine.IMGUIModule.dll" Private="false" />
+		<Reference Include="UnityEngine.InputLegacyModule" HintPath="$(KSPRoot)\KSP_x64_Data\Managed\UnityEngine.InputLegacyModule.dll" Private="false" />
+		<Reference Include="UnityEngine.PhysicsModule" HintPath="$(KSPRoot)\KSP_x64_Data\Managed\UnityEngine.PhysicsModule.dll" Private="false" />
+	</ItemGroup>
+
+	<Target Name="CheckKSPRoot" BeforeTargets="ResolveAssemblyReferences">
+		<Error Condition="'$(KSPRoot)' == ''" Text="KSPRoot is not set. Point it at a Kerbal Space Program install in MouseAimFlight.csproj.user or an environment variable." />
+		<Error Condition="'$(KSPRoot)' != '' and !Exists('$(KSPRoot)\KSP_x64_Data\Managed\Assembly-CSharp.dll')" Text="KSPRoot does not look like a Kerbal Space Program install: $(KSPRoot)" />
+	</Target>
+
+	<!-- Puts the built plugin where a linked or copied GameData will load it. -->
+	<Target Name="CopyToGameData" AfterTargets="Build">
+		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(MSBuildProjectDirectory)\..\..\GameData\MouseAimFlight\Plugins" SkipUnchangedFiles="true" />
+	</Target>
+
+</Project>

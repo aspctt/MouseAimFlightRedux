@@ -1,0 +1,108 @@
+MOUSE AIM FLIGHT LICENSE
+
+Copyright (c) 2026 ASPCT. All rights reserved.
+
+This license covers the Mouse Aim Flight mod for Kerbal Space Program: its
+source code, compiled binaries, and the assets distributed with it (the
+"Software"). It does not cover the third-party material listed in NOTICE, which
+remains under its own terms.
+
+
+1. RESERVED RIGHTS
+
+   Except as expressly granted in Section 2, no permission is given to copy,
+   modify, merge, publish, distribute, sublicense, sell, decompile,
+   disassemble, or otherwise reverse-engineer the Software, or to create
+   derivative works of it, in whole or in part.
+
+   You may download and use the Software for personal play.
+
+
+2. INTEROPERATION GRANT
+
+   Other mods, and players' own configurations, need to work alongside Mouse
+   Aim Flight. Nothing in Section 1 is intended to restrict that, and this
+   section grants the rights needed to do it.
+
+   You are granted a perpetual, worldwide, royalty-free, irrevocable right to:
+
+   (a) Write separate mods, plugins, tools, or libraries that interoperate
+       with Mouse Aim Flight through its public API, including ones that
+       provide flight modes or controllers through interfaces it exposes for
+       that purpose.
+
+   (b) Write ModuleManager patches and configuration files that change Mouse
+       Aim Flight's settings or behaviour.
+
+   (c) Use Mouse Aim Flight's configuration node names, setting keys, and
+       documented public API for the purposes of (a) and (b).
+
+   (d) Distribute, sell, and license the work described in (a) and (b) on any
+       terms you choose, through any channel, including for commercial
+       purposes.
+
+   You own that work. This license claims no ownership over, and imposes no
+   licensing terms on, work you create. Interoperating with Mouse Aim Flight
+   does not make it a derivative work of the Software, and no attribution to
+   Mouse Aim Flight is required.
+
+   This grant is irrevocable: it cannot be withdrawn from work already
+   published, and it survives any future change to this license.
+
+
+3. LIMITS OF THE GRANT
+
+   Section 2 does not permit you to:
+
+   (a) Redistribute the Software's own code, binaries, or bundled assets,
+       whether modified or unmodified, except as allowed in Section 4.
+
+   (b) Present your work in a way that implies it is Mouse Aim Flight itself,
+       or that it is endorsed by or affiliated with the project.
+
+
+4. MOD MANAGER AND MODPACK INCLUSION
+
+   You may list Mouse Aim Flight in a mod manager index, or include it in a
+   modpack, free or paid, provided that all of the following hold:
+
+   (a) The index or modpack fetches Mouse Aim Flight from an official
+       distribution page operated or authorised by the copyright holder. The
+       end user's client performs the download; the index or modpack carries a
+       reference, not the file. CKAN metadata is the intended example.
+
+   (b) The index or modpack does not bundle, mirror, re-host, or otherwise
+       include a copy of the Software.
+
+   (c) Mouse Aim Flight is distributed unmodified. You may not patch,
+       repackage, strip, recompile, or alter it in any way.
+
+   (d) Configuration files and patches shipped alongside are unaffected by
+       this section and remain governed by Section 2.
+
+   This permission is automatically revoked for any index or modpack that
+   breaches (a) through (c).
+
+
+5. THIRD-PARTY COMPONENTS
+
+   This project includes material by other authors, governed by its own terms
+   and listed in the NOTICE file distributed with this Software.
+
+   Portions of the Software come from the original Mouse Aim Flight under the
+   BSD 2-Clause License. Those portions remain available under that license,
+   and nothing in this license limits the rights it grants over them.
+
+   Files that NOTICE lists as original Mouse Aim Flight material without a
+   license belong to their authors. They are not part of the Software, and
+   this license grants nothing over them.
+
+
+6. NO WARRANTY
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE
+   USE OR OTHER DEALINGS IN THE SOFTWARE.
