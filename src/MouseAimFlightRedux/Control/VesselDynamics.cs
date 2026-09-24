@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MouseAimFlight.Control;
+namespace MouseAimFlightRedux.Control;
 
 /// <summary>
 /// What the controller needs to know about a vessel, measured in its reference frame. See docs/DESIGN.md, "Frames and
@@ -163,7 +163,7 @@ public sealed class VesselDynamics
 			catch (Exception e)
 			{
 				// One bad module should cost its own torque, not every frame's log.
-				Debug.LogWarning($"[MouseAimFlight] Ignoring torque from {provider.GetType().Name}: {e.Message}");
+				Debug.LogWarning($"[MouseAimFlightRedux] Ignoring torque from {provider.GetType().Name}: {e.Message}");
 				torqueProviders.RemoveAt(i);
 			}
 		}

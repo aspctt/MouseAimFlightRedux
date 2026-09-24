@@ -16,10 +16,11 @@ Continues Mouse Aim Flight by tetryds and ferram4 from the last commit of the or
 - Hotkeys are bound by pressing the key itself, so any key works, including numbers and function keys
 - Outside the atmosphere, mouse aim points the craft straight at the aim rather than banking into a turn
 - A KSP-AVC version file, so version checkers and CKAN can see which KSP it is built for
-- The plugin registers with KSP as `MouseAimFlight`, so other mods can declare a dependency on it
+- The plugin registers with KSP as `MouseAimFlightRedux`, so other mods can declare a dependency on it
 
 ### Changed
 
+- Renamed to Mouse Aim Flight Redux. It installs to `GameData/MouseAimFlightRedux`, and its flight modes and settings are `MOUSE_AIM_FLIGHT_REDUX_MODE` and `MOUSE_AIM_FLIGHT_REDUX_SETTINGS` nodes
 - Built for KSP 1.12.5
 - A new flight controller. It measures the torque and inertia of the craft it is flying and the response it actually gets, closes each axis as fast as that allows without overshooting, and keeps within the mode's G and angle of attack limits
 - Normal, Cruise and Aggressive are rebuilt on the new controller and tuned from scratch
@@ -28,6 +29,7 @@ Continues Mouse Aim Flight by tetryds and ferram4 from the last commit of the or
 - The markers and toolbar icon are drawn by the mod rather than loaded from image files
 - Licensed All Rights Reserved. The parts of the original under the BSD 2-Clause License keep it, with its notice in NOTICE. Releases of the original keep their own terms
 - Reads whether the camera is in mouse look through KSP's public API, rather than the first private field it happens to find on the camera
+- Mouse aim runs once for the active vessel rather than in every loaded vessel
 
 ### Removed
 
@@ -37,5 +39,6 @@ Continues Mouse Aim Flight by tetryds and ferram4 from the last commit of the or
 
 - The vessel module replaced KSP's own startup for vessel modules instead of extending it, so KSP's part of that startup never ran
 - The toolbar button was never removed on leaving flight, and each visit to flight added another listener for it that was never cleaned up
+- Control surfaces docked on while mouse aim was on were left 3.5 times too slow, and ones decoupled while it was on 3.5 times too fast, until the craft was reloaded
 
-[Unreleased]: https://github.com/aspctt/MouseAimFlight/commits/main
+[Unreleased]: https://github.com/aspctt/MouseAimFlightRedux/commits/main

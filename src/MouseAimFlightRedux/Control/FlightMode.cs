@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-namespace MouseAimFlight.Control;
+namespace MouseAimFlightRedux.Control;
 
 /// <summary>
 /// Limits and response times for the controller. Angles in degrees, rates in degrees per second, times in seconds.
@@ -10,7 +10,7 @@ namespace MouseAimFlight.Control;
 /// </summary>
 public sealed class FlightMode
 {
-	public const string NodeName = "MOUSE_AIM_FLIGHT_MODE";
+	public const string NodeName = "MOUSE_AIM_FLIGHT_REDUX_MODE";
 
 	public string Name = "Normal";
 	public float MaxPitchRate = 25f;
@@ -63,10 +63,10 @@ public sealed class FlightMode
 	/// </summary>
 	public static List<FlightMode> LoadFromDisk()
 	{
-		var path = Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "MouseAimFlight", "FlightModes.cfg");
+		var path = Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "MouseAimFlightRedux", "FlightModes.cfg");
 		var root = File.Exists(path) ? ConfigNode.Load(path) : null;
 		if (root == null)
-			Debug.LogWarning($"[MouseAimFlight] Could not read {path}");
+			Debug.LogWarning($"[MouseAimFlightRedux] Could not read {path}");
 		return Build(root?.GetNodes(NodeName));
 	}
 
@@ -81,7 +81,7 @@ public sealed class FlightMode
 
 		if (modes.Count == 0)
 		{
-			Debug.LogWarning($"[MouseAimFlight] No {NodeName} nodes found, using a built-in mode");
+			Debug.LogWarning($"[MouseAimFlightRedux] No {NodeName} nodes found, using a built-in mode");
 			modes.Add(new FlightMode());
 		}
 		return modes;

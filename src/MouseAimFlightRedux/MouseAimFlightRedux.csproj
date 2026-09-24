@@ -2,7 +2,7 @@
 
 	<!--
 		KSPRoot is the Kerbal Space Program install the plugin compiles against.
-		Set it in MouseAimFlight.csproj.user beside this file, which git ignores,
+		Set it in MouseAimFlightRedux.csproj.user beside this file, which git ignores,
 		or as an environment variable:
 
 		<Project>
@@ -14,8 +14,8 @@
 
 	<PropertyGroup>
 		<TargetFramework>net472</TargetFramework>
-		<AssemblyName>MouseAimFlight</AssemblyName>
-		<RootNamespace>MouseAimFlight</RootNamespace>
+		<AssemblyName>MouseAimFlightRedux</AssemblyName>
+		<RootNamespace>MouseAimFlightRedux</RootNamespace>
 		<Version>2.0.0</Version>
 		<LangVersion>12.0</LangVersion>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -24,7 +24,7 @@
 	<!-- Registers the plugin with KSP under its own name and version, so other mods can declare KSPAssemblyDependency on it. -->
 	<ItemGroup>
 		<AssemblyAttribute Include="KSPAssembly">
-			<_Parameter1>MouseAimFlight</_Parameter1>
+			<_Parameter1>MouseAimFlightRedux</_Parameter1>
 			<_Parameter2>$([System.Version]::Parse('$(Version)').Major)</_Parameter2>
 			<_Parameter2_IsLiteral>true</_Parameter2_IsLiteral>
 			<_Parameter3>$([System.Version]::Parse('$(Version)').Minor)</_Parameter3>
@@ -46,13 +46,13 @@
 	</ItemGroup>
 
 	<Target Name="CheckKSPRoot" BeforeTargets="ResolveAssemblyReferences">
-		<Error Condition="'$(KSPRoot)' == ''" Text="KSPRoot is not set. Point it at a Kerbal Space Program install in MouseAimFlight.csproj.user or an environment variable." />
+		<Error Condition="'$(KSPRoot)' == ''" Text="KSPRoot is not set. Point it at a Kerbal Space Program install in MouseAimFlightRedux.csproj.user or an environment variable." />
 		<Error Condition="'$(KSPRoot)' != '' and !Exists('$(KSPRoot)\KSP_x64_Data\Managed\Assembly-CSharp.dll')" Text="KSPRoot does not look like a Kerbal Space Program install: $(KSPRoot)" />
 	</Target>
 
 	<!-- Puts the built plugin where a linked or copied GameData will load it. -->
 	<Target Name="CopyToGameData" AfterTargets="Build">
-		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(MSBuildProjectDirectory)\..\..\GameData\MouseAimFlight\Plugins" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(MSBuildProjectDirectory)\..\..\GameData\MouseAimFlightRedux\Plugins" SkipUnchangedFiles="true" />
 	</Target>
 
 </Project>

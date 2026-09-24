@@ -2,6 +2,10 @@
 Software, Inc. This project is in no way associated with nor endorsed by Squad
 or Take-Two Interactive.
 
+"Mouse Aim Flight" is the name of the original project by ferram4 and tetryds.
+Mouse Aim Flight Redux is an independent continuation of it, and is not
+associated with nor endorsed by them.
+
 Other trademarks and registered trademarks are the property of the respective
 trademark holders.
 
@@ -19,12 +23,16 @@ under two sets of terms.
 BSD 2-Clause License
 
 BahamutoD permitted the BDArmory-derived code to be relicensed under these
-terms (upstream commit 3f02f4f, 1 December 2015). Both files below are named
-in the original LICENSE, and have since been adapted to this project's own
-controller and settings.
+terms (upstream commit 3f02f4f, 1 December 2015). The original LICENSE names
+MouseAimVesselModule.cs and MouseAimFlightSceneGUI.cs. Their code has since
+been adapted to this project's own controller and settings and divided among
+the files below, each of which carries these terms in its header.
 
-    src/MouseAimFlight/MouseAimFlightSceneGUI.cs
-    src/MouseAimFlight/MouseAimVesselModule.cs
+    src/MouseAimFlightRedux/MouseAimPilot.cs
+    src/MouseAimFlightRedux/AimTracker.cs
+    src/MouseAimFlightRedux/ControlSurfaceBoost.cs
+    src/MouseAimFlightRedux/UI/Hud.cs
+    src/MouseAimFlightRedux/UI/SettingsWindow.cs
 
     Copyright (c) 2016, BahamutoD, ferram4, tetryds
     All rights reserved.
@@ -70,7 +78,7 @@ Releases of the original keep their own terms.
 
 KERBAL SPACE PROGRAM AND UNITY
 
-Mouse Aim Flight is built against the assemblies of Kerbal Space Program and
+Mouse Aim Flight Redux is built against the assemblies of Kerbal Space Program and
 the Unity engine. Neither is bundled with or redistributed by this project.
 
 

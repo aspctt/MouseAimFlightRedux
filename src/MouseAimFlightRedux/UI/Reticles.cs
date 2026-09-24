@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace MouseAimFlight;
+namespace MouseAimFlightRedux.UI;
 
 /// <summary>
 /// Marker and icon textures, drawn at startup from signed distance functions so no image files ship with the mod.

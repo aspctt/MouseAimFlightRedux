@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace MouseAimFlight.Control;
+namespace MouseAimFlightRedux.Control;
 
 /// <summary>The loaded flight modes and which one is selected, shared by every vessel.</summary>
 public static class FlightModes

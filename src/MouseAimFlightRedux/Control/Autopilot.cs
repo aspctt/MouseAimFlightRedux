@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace MouseAimFlight.Control;
+namespace MouseAimFlightRedux.Control;
 
 /// <summary>
 /// Turns an aim direction into pitch, yaw and roll inputs. Guidance picks an angle error per axis, then each axis runs

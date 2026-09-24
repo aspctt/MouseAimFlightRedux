@@ -1,4 +1,4 @@
-# Mouse Aim Flight: Design
+# Mouse Aim Flight Redux: Design
 
 This document is the source of truth for how the plugin works and why. Code follows it, not the other way round.
 
@@ -8,9 +8,26 @@ The player points the mouse where the aircraft should go. The plugin keeps an ai
 
 ## Provenance
 
-The original Mouse Aim Flight shipped two kinds of files. Those under the BSD 2-Clause License are kept and adapted: the vessel module that reads the mouse and drives the inputs, and the scene addon that draws the markers and the settings window. Everything else in the original was All Rights Reserved and is replaced: the flight controller, the flight modes, the settings, and the textures.
+The original Mouse Aim Flight shipped two kinds of files. Those under the BSD 2-Clause License are kept and adapted: the vessel module that read the mouse and drove the inputs, and the scene addon that drew the markers and the settings window. Their code now lives in the files marked BSD under "Structure", each carrying that license's header. Everything else in the original was All Rights Reserved and is replaced: the flight controller, the flight modes, the settings, and the textures.
 
 Replacement code is written from this document. The unlicensed files are not used as a reference for it: not their structure, their names, their constants or their tuning. Where the new code does the same job, it does it its own way, and the reasons are recorded here.
+
+## Structure
+
+One addon per flight scene owns mouse aim for whichever vessel is active, rather than a module on every loaded vessel, since only the active one is ever flown.
+
+| File | Role | |
+|---|---|---|
+| `MouseAimPilot.cs` | The owner: hotkeys, the cursor, switching on and off, following the active vessel, and the inputs sent each physics frame | BSD |
+| `AimTracker.cs` | The aim direction and free look | BSD |
+| `ControlSurfaceBoost.cs` | The control surface speed-up | BSD |
+| `UI/Hud.cs` | The markers over the flight view | BSD |
+| `UI/SettingsWindow.cs` | The toolbar button and settings window | BSD |
+| `UI/Reticles.cs` | Marker and icon textures | |
+| `Settings.cs` | Player settings | |
+| `Control/` | The controller and flight modes | |
+
+Switching vessels, opening the pause menu and going on EVA all switch mouse aim off, and leaving flight lets go quietly.
 
 ## Frames and conventions
 
@@ -92,7 +109,7 @@ A floor on authority keeps the division sane on axes with nothing to steer them.
 
 ## Flight modes
 
-A flight mode is a set of limits and response times for the same controller. Modes are `MOUSE_AIM_FLIGHT_MODE` nodes in `GameData/MouseAimFlight/FlightModes.cfg`, so they can be changed or added by editing that file or through ModuleManager. The mode hotkey cycles them in file order, and the settings window can re-read the file from disk to tune without a restart. That reload bypasses ModuleManager.
+A flight mode is a set of limits and response times for the same controller. Modes are `MOUSE_AIM_FLIGHT_REDUX_MODE` nodes in `GameData/MouseAimFlightRedux/FlightModes.cfg`, so they can be changed or added by editing that file or through ModuleManager. The mode hotkey cycles them in file order, and the settings window can re-read the file from disk to tune without a restart. That reload bypasses ModuleManager.
 
 | Key | Unit | Meaning |
 |---|---|---|
@@ -115,7 +132,7 @@ Three ship with the mod:
 
 ## Settings
 
-Settings are saved to `GameData/MouseAimFlight/PluginData/Settings.cfg`. KSP does not load config from `PluginData`, and an update of the mod never overwrites it. Defaults live in code, so a missing file or key simply means the default.
+Settings are saved to `GameData/MouseAimFlightRedux/PluginData/Settings.cfg`. KSP does not load config from `PluginData`, and an update of the mod never overwrites it. Defaults live in code, so a missing file or key simply means the default.
 
 | Key | Default | |
 |---|---|---|
@@ -130,11 +147,15 @@ Settings are saved to `GameData/MouseAimFlight/PluginData/Settings.cfg`. KSP doe
 
 Hotkeys are bound by clicking the button in the settings window and pressing a key; Escape cancels.
 
+## Control surface speed-up
+
+While mouse aim is on, stock control surfaces move 3.5 times faster and ease into position, which suits a controller making many small corrections. Each surface's own speed and easing are recorded when it is sped up and put back exactly when mouse aim goes off. Surfaces that join the vessel while it is on, by docking say, are sped up as they arrive. Surfaces that leave, by decoupling, get their own values back at once. Neither is touched under Ferram Aerospace Research, which drives its control surfaces itself.
+
 ## Markers and icon
 
 The aim ring, the nose markers and the toolbar icon are drawn into textures at startup from signed distance functions, with one pixel of antialiasing. No image files ship with the mod.
 
 ## Compatibility
 
-- **KSP version:** built against KSP 1.12.5 for .NET Framework 4.7.2. KSP before 1.8 ran a .NET 3.5 runtime and shipped a single `UnityEngine.dll` without the module assemblies this plugin references, so it cannot load there.
+- **KSP version:** built against KSP 1.12.5 for .NET Framework 4.7.2. KSP before 1.8 ran a .NET 3.5 runtime, so it cannot load there.
 - **Ferram Aerospace Research:** detected by its assembly name. The stock control surface speed-up is only applied without it.

@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 
-namespace MouseAimFlight;
+namespace MouseAimFlightRedux;
 
 public enum ReticleStyle
 {
@@ -18,7 +18,7 @@ public enum ReticleStyle
 /// </summary>
 public sealed class Settings
 {
-	const string NodeName = "MOUSE_AIM_FLIGHT_SETTINGS";
+	const string NodeName = "MOUSE_AIM_FLIGHT_REDUX_SETTINGS";
 
 	static Settings instance;
 	static bool? farLoaded;
@@ -38,7 +38,7 @@ public sealed class Settings
 	public float ReticleOpacity = 1f;
 	public float ReticleSize = 0.75f;
 
-	static string FilePath => Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "MouseAimFlight", "PluginData", "Settings.cfg");
+	static string FilePath => Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "MouseAimFlightRedux", "PluginData", "Settings.cfg");
 
 	static Settings Load()
 	{
@@ -50,7 +50,7 @@ public sealed class Settings
 		var node = ConfigNode.Load(path)?.GetNode(NodeName);
 		if (node == null)
 		{
-			Debug.LogWarning($"[MouseAimFlight] {path} has no {NodeName} node, using defaults");
+			Debug.LogWarning($"[MouseAimFlightRedux] {path} has no {NodeName} node, using defaults");
 			return settings;
 		}
 
@@ -85,7 +85,7 @@ public sealed class Settings
 		var path = FilePath;
 		Directory.CreateDirectory(Path.GetDirectoryName(path));
 		if (!root.Save(path))
-			Debug.LogError($"[MouseAimFlight] Could not save settings to {path}");
+			Debug.LogError($"[MouseAimFlightRedux] Could not save settings to {path}");
 	}
 
 	static void ReadEnum<T>(ConfigNode node, string key, ref T value) where T : struct
@@ -96,6 +96,6 @@ public sealed class Settings
 		if (Enum.TryParse(text, true, out T parsed) && Enum.IsDefined(typeof(T), parsed))
 			value = parsed;
 		else
-			Debug.LogWarning($"[MouseAimFlight] Ignoring {key} = {text} in settings, not a valid value");
+			Debug.LogWarning($"[MouseAimFlightRedux] Ignoring {key} = {text} in settings, not a valid value");
 	}
 }

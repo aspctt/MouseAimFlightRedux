@@ -1,5 +1,5 @@
 ###############################################################################
-# Mouse Aim Flight - .gitignore for a Kerbal Space Program plugin mod
+# Mouse Aim Flight Redux - .gitignore for a Kerbal Space Program plugin mod
 ###############################################################################
 
 ## Build output
@@ -12,7 +12,7 @@ obj/
 # The post-build step copies the assembly into GameData so a linked install can
 # load it. Releases are built from source, so the copy in the tree is only ever
 # a local build and never belongs in history.
-GameData/MouseAimFlight/Plugins/*.dll
+GameData/MouseAimFlightRedux/Plugins/*.dll
 
 ## Release archives
 # Built by zipping GameData for a release. Regenerated on demand, so there is

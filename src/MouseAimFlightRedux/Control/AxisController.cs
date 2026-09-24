@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace MouseAimFlight.Control;
+namespace MouseAimFlightRedux.Control;
 
 /// <summary>
 /// One axis of the cascade: an angle error becomes a rate command, and the rate loop changes the input until the
