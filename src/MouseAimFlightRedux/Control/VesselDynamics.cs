@@ -25,6 +25,9 @@ public sealed class VesselDynamics
 	/// <summary>Available torque in kN·m: x pitch, y roll, z yaw.</summary>
 	Vector3 torque;
 
+	/// <summary>The part of <see cref="torque"/> from controls that move at a fixed speed.</summary>
+	Vector3 slewTorque;
+
 	/// <summary>Moment of inertia in t·m² about the pitch (x), roll (y) and yaw (z) axes through the centre of mass.</summary>
 	Vector3 inertia = Vector3.one;
 
@@ -51,6 +54,18 @@ public sealed class VesselDynamics
 
 	public float YawAuthority { get; private set; }
 	public float RollAuthority { get; private set; }
+
+	/// <summary>
+	/// How fast the slowest fixed-speed controls move, in full inputs per second, or infinity if there are none. Stock
+	/// surfaces ease into position instead; Atmosphere Autopilot's move at a fixed speed.
+	/// </summary>
+	public float SlewSpeed { get; private set; } = float.PositiveInfinity;
+
+	/// <summary>Share of each axis's torque that comes from fixed-speed controls, 0 to 1.</summary>
+	public float PitchSlewShare { get; private set; }
+
+	public float YawSlewShare { get; private set; }
+	public float RollSlewShare { get; private set; }
 
 	/// <summary>kPa.</summary>
 	public float DynamicPressure { get; private set; }
@@ -132,7 +147,13 @@ public sealed class VesselDynamics
 		PitchAuthority = Mathf.Max(torque.x / inertia.x, MinAuthority);
 		RollAuthority = Mathf.Max(torque.y / inertia.y, MinAuthority);
 		YawAuthority = Mathf.Max(torque.z / inertia.z, MinAuthority);
+
+		PitchSlewShare = Share(slewTorque.x, torque.x);
+		RollSlewShare = Share(slewTorque.y, torque.y);
+		YawSlewShare = Share(slewTorque.z, torque.z);
 	}
+
+	static float Share(float part, float whole) => whole > 1e-6f ? Mathf.Clamp01(part / whole) : 0f;
 
 	void CollectTorqueProviders()
 	{
@@ -147,6 +168,8 @@ public sealed class VesselDynamics
 	{
 		var rcsOn = vessel.ActionGroups[KSPActionGroup.RCS];
 		var sum = Vector3.zero;
+		var slewSum = Vector3.zero;
+		var slewSpeed = float.PositiveInfinity;
 		for (var i = torqueProviders.Count - 1; i >= 0; i--)
 		{
 			var provider = torqueProviders[i];
@@ -156,9 +179,18 @@ public sealed class VesselDynamics
 			try
 			{
 				provider.GetPotentialTorque(out var positive, out var negative);
-				sum.x += (Mathf.Abs(positive.x) + Mathf.Abs(negative.x)) * 0.5f;
-				sum.y += (Mathf.Abs(positive.y) + Mathf.Abs(negative.y)) * 0.5f;
-				sum.z += (Mathf.Abs(positive.z) + Mathf.Abs(negative.z)) * 0.5f;
+				var average = new Vector3(
+					(Mathf.Abs(positive.x) + Mathf.Abs(negative.x)) * 0.5f,
+					(Mathf.Abs(positive.y) + Mathf.Abs(negative.y)) * 0.5f,
+					(Mathf.Abs(positive.z) + Mathf.Abs(negative.z)) * 0.5f);
+				sum += average;
+
+				var speed = provider is ModuleControlSurface surface ? AtmosphereAutopilot.SurfaceSpeed(surface) : float.PositiveInfinity;
+				if (!float.IsPositiveInfinity(speed))
+				{
+					slewSum += average;
+					slewSpeed = Mathf.Min(slewSpeed, speed);
+				}
 			}
 			catch (Exception e)
 			{
@@ -168,6 +200,8 @@ public sealed class VesselDynamics
 			}
 		}
 		torque = sum;
+		slewTorque = slewSum;
+		SlewSpeed = slewSpeed;
 	}
 
 	void MeasureInertia()

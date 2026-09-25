@@ -40,6 +40,7 @@ sealed class MouseAimPilot : MonoBehaviour
 	readonly AimTracker aim = new();
 	readonly Autopilot autopilot = new();
 	readonly ControlSurfaceBoost boost = new();
+	readonly AutopilotLockout lockout = new();
 
 	Vessel vessel;
 	VesselDynamics dynamics;
@@ -97,7 +98,14 @@ sealed class MouseAimPilot : MonoBehaviour
 
 	void LateUpdate()
 	{
-		if (vessel == null || MapView.MapIsEnabled || PauseMenu.isOpen)
+		if (vessel == null)
+			return;
+
+		// After every Update, so SAS or Atmosphere Autopilot switched on this frame is off again before physics runs.
+		if (active)
+			lockout.Hold();
+
+		if (MapView.MapIsEnabled || PauseMenu.isOpen)
 			return;
 
 		// KSP's own mouse look frees the cursor, so take it back whenever free look starts or ends.
@@ -123,14 +131,16 @@ sealed class MouseAimPilot : MonoBehaviour
 			aim.Recentre(vessel);
 			dynamics.Invalidate();
 			boost.Apply(vessel);
+			lockout.Engage(vessel);
 			if (announce)
 				ScreenMessages.PostScreenMessage("Mouse aim: " + FlightModes.Current.Name);
 		}
 		else
 		{
 			boost.Restore();
+			lockout.Release();
 			if (announce)
-				ScreenMessages.PostScreenMessage("Mouse aim: off");
+				ScreenMessages.PostScreenMessage("Mouse aim: Off");
 		}
 	}
 
@@ -140,12 +150,14 @@ sealed class MouseAimPilot : MonoBehaviour
 		if (active)
 			SetActive(false, next != null);
 		if (vessel != null)
-			vessel.OnAutopilotUpdate -= Fly;
+			vessel.OnPreAutopilotUpdate -= Fly;
 
 		vessel = next;
 		dynamics = vessel != null ? new VesselDynamics(vessel) : null;
+		// The earliest of the vessel's control callbacks, so autopilots on the later ones, like Atmosphere Autopilot
+		// flying together with mouse aim, take its output as their input whichever of them hooked in first.
 		if (vessel != null)
-			vessel.OnAutopilotUpdate += Fly;
+			vessel.OnPreAutopilotUpdate += Fly;
 	}
 
 	void Fly(FlightCtrlState s)

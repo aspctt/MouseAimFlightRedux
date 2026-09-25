@@ -24,6 +24,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+using System;
 using KSP.UI.Screens;
 using MouseAimFlightRedux.Control;
 using UnityEngine;
@@ -43,12 +44,22 @@ sealed class SettingsWindow : MonoBehaviour
 
 	const string BindingLockId = "MouseAimFlightReduxKeyBinding";
 
+	const float MarkerRowHeight = 30f;
+
 	/// <summary>Kept across flight scenes so the window reopens where it was left.</summary>
 	static Rect windowRect;
 
 	ApplicationLauncherButton button;
 	bool visible;
 	KeyBinding binding;
+	bool markerListOpen;
+	GUIStyle markerRowStyle;
+
+	/// <summary>
+	/// A layout window grows to fit its contents but never shrinks back on its own, so it's cut down to size after the
+	/// marker list closes.
+	/// </summary>
+	bool shrink;
 
 	void Start()
 	{
@@ -80,6 +91,12 @@ sealed class SettingsWindow : MonoBehaviour
 			CaptureKey();
 
 		GUI.skin = HighLogic.Skin;
+		markerRowStyle ??= new GUIStyle(HighLogic.Skin.button) { alignment = TextAnchor.MiddleLeft };
+		if (shrink)
+		{
+			windowRect.height = 0f;
+			shrink = false;
+		}
 		windowRect = GUILayout.Window(GetHashCode(), windowRect, DrawWindow, "Mouse Aim Flight Redux");
 	}
 
@@ -104,9 +121,12 @@ sealed class SettingsWindow : MonoBehaviour
 
 		GUILayout.Space(10);
 
+		// Layout and the events after it must see the same controls, so a click only opens or closes the list from the
+		// next frame on.
+		var listOpen = markerListOpen;
 		GUILayout.BeginHorizontal();
 		if (GUILayout.Button("Nose marker: " + settings.Reticle, GUILayout.Width(180)))
-			settings.Reticle = (ReticleStyle)(((int)settings.Reticle + 1) % 3);
+			SetMarkerListOpen(!markerListOpen);
 		var preview = GUILayoutUtility.GetRect(48, 48, GUILayout.Width(48), GUILayout.Height(48));
 		var nose = Reticles.Nose(settings.Reticle);
 		if (nose != null)
@@ -118,6 +138,9 @@ sealed class SettingsWindow : MonoBehaviour
 		}
 		GUILayout.EndHorizontal();
 
+		if (listOpen)
+			MarkerList(settings);
+
 		GUILayout.Space(10);
 
 		GUILayout.Label("Mouse Sensitivity: " + settings.MouseSensitivity.ToString("0.00"));
@@ -128,10 +151,41 @@ sealed class SettingsWindow : MonoBehaviour
 		settings.ReticleSize = GUILayout.HorizontalSlider(settings.ReticleSize, 0.4f, 1f);
 		settings.InvertX = GUILayout.Toggle(settings.InvertX, "Invert X Axis");
 		settings.InvertY = GUILayout.Toggle(settings.InvertY, "Invert Y Axis");
+		if (AtmosphereAutopilot.Available)
+			settings.KeepAtmosphereAutopilotOff = GUILayout.Toggle(settings.KeepAtmosphereAutopilotOff, "Keep Atmosphere Autopilot Off");
 
 		GUILayout.EndVertical();
 
 		GUI.DragWindow();
+	}
+
+	/// <summary>Opens under the nose marker button: one row per marker, its name on the left and the marker on the right.</summary>
+	void MarkerList(Settings settings)
+	{
+		foreach (ReticleStyle style in Enum.GetValues(typeof(ReticleStyle)))
+		{
+			var row = GUILayoutUtility.GetRect(180f, MarkerRowHeight, GUILayout.Width(180f), GUILayout.Height(MarkerRowHeight));
+			var chosen = style == settings.Reticle;
+			if (GUI.Toggle(row, chosen, style.ToString(), markerRowStyle) != chosen)
+			{
+				settings.Reticle = style;
+				SetMarkerListOpen(false);
+			}
+
+			var marker = Reticles.Nose(style);
+			if (marker != null)
+			{
+				var size = MarkerRowHeight - 6f;
+				GUI.DrawTexture(new Rect(row.xMax - size - 6f, row.y + 3f, size, size), marker);
+			}
+		}
+	}
+
+	void SetMarkerListOpen(bool open)
+	{
+		if (markerListOpen && !open)
+			shrink = true;
+		markerListOpen = open;
 	}
 
 	void KeyRow(string label, KeyBinding which, KeyCode key)
@@ -216,6 +270,7 @@ sealed class SettingsWindow : MonoBehaviour
 	{
 		visible = false;
 		EndBinding();
+		SetMarkerListOpen(false);
 		Settings.Instance.Save();
 	}
 }

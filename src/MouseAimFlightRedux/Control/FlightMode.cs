@@ -26,6 +26,7 @@ public sealed class FlightMode
 	public float RateResponse = 0.15f;
 	public float ControlLag = 0.12f;
 	public float ControlGain = 0.7f;
+	public float BrakingShare = 0.5f;
 
 	static FlightMode FromNode(ConfigNode node)
 	{
@@ -44,12 +45,15 @@ public sealed class FlightMode
 		node.TryGetValue("rateResponse", ref mode.RateResponse);
 		node.TryGetValue("controlLag", ref mode.ControlLag);
 		node.TryGetValue("controlGain", ref mode.ControlGain);
+		node.TryGetValue("brakingShare", ref mode.BrakingShare);
 
-		// Response times divide, the gain has to move the input the right way, and the bank blend needs a width.
+		// Response times divide, the gain has to move the input the right way, braking can't plan on more than all of
+		// the authority, and the bank blend needs a width.
 		mode.AttitudeResponse = Mathf.Max(mode.AttitudeResponse, 0.05f);
 		mode.RateResponse = Mathf.Max(mode.RateResponse, 0.02f);
 		mode.ControlLag = Mathf.Max(mode.ControlLag, 0.01f);
 		mode.ControlGain = Mathf.Clamp(mode.ControlGain, 0.05f, 1.5f);
+		mode.BrakingShare = Mathf.Clamp(mode.BrakingShare, 0.1f, 1f);
 		mode.BankBlendEnd = Mathf.Max(mode.BankBlendEnd, mode.BankBlendStart + 0.1f);
 		return mode;
 	}

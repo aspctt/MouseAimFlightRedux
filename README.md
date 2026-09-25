@@ -17,7 +17,7 @@ Fly planes with your mouse. Point where you want to go, and Mouse Aim Flight Red
 It reads your craft's torque and inertia, so it adapts to whatever you build. It turns hard without overshooting, stays within G and angle of attack limits, and never needs trimming.
 
 * **P** turns mouse aim on and off.
-* **O** switches flight mode: Normal, Cruise or Aggressive.
+* **O** switches flight mode: Normal, Aggressive, Unlimited or Cruise. Each game starts in Normal.
 * The toolbar button opens the settings: hotkeys, sensitivity, axis inversion and the on-screen markers.
 
 Mouse Aim Flight Redux continues the original Mouse Aim Flight by tetryds and ferram4. It is an independent project, not endorsed by them.
@@ -31,6 +31,8 @@ To install, place the GameData folder inside your Kerbal Space Program folder. I
 ## Dependencies
 
 None. Works with [Ferram Aerospace Research](https://github.com/dkavolis/Ferram-Aerospace-Research) out of the box.
+
+SAS and [Atmosphere Autopilot](https://github.com/Boris-Barboris/AtmosphereAutopilot) are kept off while mouse aim is on, and come back on afterwards. To fly with Atmosphere Autopilot's fly-by-wire on, untick "Keep Atmosphere Autopilot Off" in the settings.
 
 ## Tuning
 

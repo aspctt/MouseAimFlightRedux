@@ -89,8 +89,8 @@ public sealed class Autopilot
 		var pitchDown = -maxPitch;
 		if (aero > 0f)
 		{
-			// Load factor: in a turn the flight path rotates at n·g/V.
-			var gRate = mode.MaxG * Gravity / Mathf.Max(vessel.Airspeed, 1f);
+			// Load factor: in a turn the flight path rotates at n·g/V. A maxG of zero or less means no limit.
+			var gRate = mode.MaxG > 0f ? mode.MaxG * Gravity / Mathf.Max(vessel.Airspeed, 1f) : float.PositiveInfinity;
 
 			// Angle of attack: allow the current pitch rate plus whatever closes the remaining margin, so a turn held
 			// at the limit keeps turning and one past it backs off.
@@ -106,9 +106,9 @@ public sealed class Autopilot
 		var maxYaw = mode.MaxYawRate * Mathf.Deg2Rad;
 		var maxRoll = mode.MaxRollRate * Mathf.Deg2Rad;
 
-		pitchInput = pitch.Step(pitchCommand, vessel.PitchRate, pitchDown, pitchUp, vessel.PitchAuthority, mode, dt);
-		yawInput = yaw.Step(yawCommand, vessel.YawRate, -maxYaw, maxYaw, vessel.YawAuthority, mode, dt);
-		rollInput = roll.Step(rollCommand, vessel.RollRate, -maxRoll, maxRoll, vessel.RollAuthority, mode, dt);
+		pitchInput = pitch.Step(pitchCommand, vessel.PitchRate, pitchDown, pitchUp, vessel.PitchAuthority, vessel.PitchSlewShare, vessel.SlewSpeed, mode, dt);
+		yawInput = yaw.Step(yawCommand, vessel.YawRate, -maxYaw, maxYaw, vessel.YawAuthority, vessel.YawSlewShare, vessel.SlewSpeed, mode, dt);
+		rollInput = roll.Step(rollCommand, vessel.RollRate, -maxRoll, maxRoll, vessel.RollAuthority, vessel.RollSlewShare, vessel.SlewSpeed, mode, dt);
 	}
 
 	static float SmoothStep(float from, float to, float value) => Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(from, to, value));

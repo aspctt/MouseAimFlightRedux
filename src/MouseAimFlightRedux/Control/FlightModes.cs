@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace MouseAimFlightRedux.Control;
@@ -22,24 +23,17 @@ public static class FlightModes
 	{
 		_ = Current;
 		index = (index + 1) % modes.Count;
-		Remember();
 		return modes[index];
 	}
 
 	/// <summary>Re-reads the modes from disk, keeping the selection by name where it still exists.</summary>
 	public static void ReloadFromDisk() => Use(FlightMode.LoadFromDisk());
 
+	/// <summary>Starts on the first mode, so each game begins in the same one.</summary>
 	static void Use(List<FlightMode> loaded)
 	{
+		var selected = modes?[index].Name;
 		modes = loaded;
-		index = modes.FindIndex(m => m.Name == Settings.Instance.Mode);
-		if (index < 0)
-			index = 0;
-	}
-
-	static void Remember()
-	{
-		Settings.Instance.Mode = modes[index].Name;
-		Settings.Instance.Save();
+		index = Math.Max(modes.FindIndex(m => m.Name == selected), 0);
 	}
 }

@@ -30,13 +30,13 @@ public sealed class Settings
 
 	public KeyCode ToggleKey = KeyCode.P;
 	public KeyCode ModeKey = KeyCode.O;
-	public string Mode = "Normal";
 	public float MouseSensitivity = 1f;
 	public bool InvertX;
 	public bool InvertY;
 	public ReticleStyle Reticle = ReticleStyle.Cross;
 	public float ReticleOpacity = 1f;
 	public float ReticleSize = 0.75f;
+	public bool KeepAtmosphereAutopilotOff = true;
 
 	static string FilePath => Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "MouseAimFlightRedux", "PluginData", "Settings.cfg");
 
@@ -56,13 +56,13 @@ public sealed class Settings
 
 		ReadEnum(node, "toggleKey", ref settings.ToggleKey);
 		ReadEnum(node, "modeKey", ref settings.ModeKey);
-		node.TryGetValue("mode", ref settings.Mode);
 		node.TryGetValue("mouseSensitivity", ref settings.MouseSensitivity);
 		node.TryGetValue("invertX", ref settings.InvertX);
 		node.TryGetValue("invertY", ref settings.InvertY);
 		ReadEnum(node, "reticle", ref settings.Reticle);
 		node.TryGetValue("reticleOpacity", ref settings.ReticleOpacity);
 		node.TryGetValue("reticleSize", ref settings.ReticleSize);
+		node.TryGetValue("keepAtmosphereAutopilotOff", ref settings.KeepAtmosphereAutopilotOff);
 		return settings;
 	}
 
@@ -71,13 +71,13 @@ public sealed class Settings
 		var node = new ConfigNode(NodeName);
 		node.AddValue("toggleKey", ToggleKey.ToString());
 		node.AddValue("modeKey", ModeKey.ToString());
-		node.AddValue("mode", Mode);
 		node.AddValue("mouseSensitivity", MouseSensitivity);
 		node.AddValue("invertX", InvertX);
 		node.AddValue("invertY", InvertY);
 		node.AddValue("reticle", Reticle.ToString());
 		node.AddValue("reticleOpacity", ReticleOpacity);
 		node.AddValue("reticleSize", ReticleSize);
+		node.AddValue("keepAtmosphereAutopilotOff", KeepAtmosphereAutopilotOff);
 
 		var root = new ConfigNode();
 		root.AddNode(node);

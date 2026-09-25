@@ -33,8 +33,9 @@ namespace MouseAimFlightRedux;
 /// <summary>
 /// While mouse aim is on, stock control surfaces move faster and ease into position, which suits a controller making
 /// many small corrections. Each surface's own values are recorded and put back exactly, including surfaces that join
-/// or leave the vessel in between. Not applied under FAR, which drives its control surfaces itself. See docs/DESIGN.md,
-/// "Control surface speed-up".
+/// or leave the vessel in between. Not applied under FAR, which drives its control surfaces itself, or to other mods'
+/// replacements for the stock modules, which move their surfaces their own way. See docs/DESIGN.md, "Control surface
+/// speed-up".
 /// </summary>
 sealed class ControlSurfaceBoost
 {
@@ -77,7 +78,7 @@ sealed class ControlSurfaceBoost
 
 		foreach (var surface in vessel.FindPartModulesImplementing<ModuleControlSurface>())
 		{
-			if (originals.ContainsKey(surface))
+			if (originals.ContainsKey(surface) || !IsStock(surface))
 				continue;
 
 			originals[surface] = new Original { ActuatorSpeed = surface.actuatorSpeed, UseExponentialSpeed = surface.useExponentialSpeed };
@@ -101,6 +102,12 @@ sealed class ControlSurfaceBoost
 		originals.Clear();
 		vessel = null;
 	}
+
+	/// <summary>
+	/// ModuleControlSurface or a stock subclass such as ModuleAeroSurface. Atmosphere Autopilot, for one, swaps in its
+	/// own subclass whose surfaces follow these settings differently.
+	/// </summary>
+	static bool IsStock(ModuleControlSurface surface) => surface.GetType().Assembly == typeof(ModuleControlSurface).Assembly;
 
 	static void Put(ModuleControlSurface surface, Original original)
 	{

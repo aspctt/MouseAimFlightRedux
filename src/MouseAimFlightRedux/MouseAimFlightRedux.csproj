@@ -43,6 +43,7 @@
 		<Reference Include="UnityEngine.IMGUIModule" HintPath="$(KSPRoot)\KSP_x64_Data\Managed\UnityEngine.IMGUIModule.dll" Private="false" />
 		<Reference Include="UnityEngine.InputLegacyModule" HintPath="$(KSPRoot)\KSP_x64_Data\Managed\UnityEngine.InputLegacyModule.dll" Private="false" />
 		<Reference Include="UnityEngine.PhysicsModule" HintPath="$(KSPRoot)\KSP_x64_Data\Managed\UnityEngine.PhysicsModule.dll" Private="false" />
+		<Reference Include="UnityEngine.TextRenderingModule" HintPath="$(KSPRoot)\KSP_x64_Data\Managed\UnityEngine.TextRenderingModule.dll" Private="false" />
 	</ItemGroup>
 
 	<Target Name="CheckKSPRoot" BeforeTargets="ResolveAssemblyReferences">

@@ -24,6 +24,8 @@ One addon per flight scene runs mouse aim for the active vessel, since only that
 | `MouseAimPilot.cs` | Hotkeys, cursor, on and off, following the active vessel, sending inputs | BSD |
 | `AimTracker.cs` | The aim point and free look | BSD |
 | `ControlSurfaceBoost.cs` | The control surface speed-up | BSD |
+| `AutopilotLockout.cs` | Keeping SAS and Atmosphere Autopilot off | |
+| `AtmosphereAutopilot.cs` | Atmosphere Autopilot's master switch and surface speed, by reflection | |
 | `UI/Hud.cs` | The on-screen markers | BSD |
 | `UI/SettingsWindow.cs` | Toolbar button and settings window | BSD |
 | `UI/Reticles.cs` | Marker and icon textures | |
@@ -69,8 +71,8 @@ All of this fades in between 0.3 and 1.5 kPa of dynamic pressure. Below that, as
 Turns angle error into a target rate.
 
 - **Lead:** it works on the error left once the controls catch up, `error - rate · (rateResponse + controlLag)`, so it eases off before the target rather than after.
-- **Rate:** the smaller of `error / attitudeResponse` and the braking curve `sqrt(2 · a · |error|)`, where `a` is half the available angular acceleration. That's the fastest rate it can still stop from in time.
-- **Limits:** `maxPitchRate`, `maxYawRate` and `maxRollRate`. Pitch is also capped at `maxG · g / airspeed`, halved when pushing. Near `maxAoA`, or `maxNegativeAoA` when pushing, pitch rate may only grow by what closes the remaining margin over `attitudeResponse`, so a turn held at the limit keeps turning.
+- **Rate:** the smaller of `error / attitudeResponse` and the braking curve `sqrt(2 · a · |error|)`, where `a` is `brakingShare` of the available angular acceleration. That's the fastest rate it can still stop from in time.
+- **Limits:** `maxPitchRate`, `maxYawRate` and `maxRollRate`. Pitch is also capped at `maxG · g / airspeed`, halved when pushing, unless `maxG` is 0. Near `maxAoA`, or `maxNegativeAoA` when pushing, pitch rate may only grow by what closes the remaining margin over `attitudeResponse`, so a turn held at the limit keeps turning.
 
 ### Rate loop
 
@@ -79,7 +81,7 @@ Turns rate error into stick input, incrementally. It measures the angular accele
 Measuring beats modelling here. A stable plane needs a lot of held elevator to keep pitching, and a loop that only scales rate error by authority never gets there at speed. Measuring folds stability, trim and damping into the feedback.
 
 - **Acceleration:** change in rate per frame, low-pass filtered.
-- **Controls:** modelled as following the inputs with a `controlLag` delay, then passed through the same filter so the two line up.
+- **Controls:** modelled as following the inputs with a `controlLag` delay, then passed through the same filter so the two line up. Controls that move at a fixed speed, like Atmosphere Autopilot's surfaces, are modelled at that speed instead, blended by their share of the axis's torque. Otherwise the loop keeps adding input while they catch up on a big change, then overshoots.
 - **Gain:** `controlGain` scales each step. Too-high authority only slows it; too-low overshoots, which a gain below 1 guards against.
 - **Pilot override:** the input the vessel actually got is fed back, so an axis resumes smoothly when the pilot lets go.
 
@@ -90,16 +92,17 @@ Torque over moment of inertia, per axis.
 - **Torque:** the sum of `ITorqueProvider.GetPotentialTorque` over the vessel, taken as x pitch, y roll and z yaw, with positive and negative averaged. RCS only counts while it's on. Refreshed a few times a second, since it changes with airspeed.
 - **Inertia:** summed from the part rigidbodies about each axis through the centre of mass. That's each part's own inertia on the axis, plus mass times distance squared. Refreshed about once a second.
 - **Floor:** a minimum keeps the division sane on axes with nothing to steer them.
+- **Fixed-speed share:** the part of each axis's torque from Atmosphere Autopilot's surfaces, and their speed, for the rate loop's controls model.
 
 ## Flight modes
 
-A mode is a set of limits and response times for the same controller, read from `MOUSE_AIM_FLIGHT_REDUX_MODE` nodes in `GameData/MouseAimFlightRedux/FlightModes.cfg`. ModuleManager can patch them, and the mode hotkey cycles them in file order. The settings window can reload the file without a restart, though that reload skips ModuleManager.
+A mode is a set of limits and response times for the same controller, read from `MOUSE_AIM_FLIGHT_REDUX_MODE` nodes in `GameData/MouseAimFlightRedux/FlightModes.cfg`. ModuleManager can patch them. Each game starts in the first, and the mode hotkey cycles them in file order. The settings window can reload the file without a restart, though that reload skips ModuleManager.
 
 | Key | Unit | Meaning |
 |---|---|---|
 | `name` | | shown on screen |
 | `maxPitchRate`, `maxYawRate`, `maxRollRate` | °/s | rate limits |
-| `maxG` | g | pull limit, halved when pushing |
+| `maxG` | g | pull limit, halved when pushing, 0 for none |
 | `maxAoA`, `maxNegativeAoA` | ° | angle of attack limits |
 | `maxBank` | ° | bank limit |
 | `bankBlendStart`, `bankBlendEnd` | ° | where the bank starts and finishes committing |
@@ -107,8 +110,9 @@ A mode is a set of limits and response times for the same controller, read from 
 | `rateResponse` | s | rate loop time constant |
 | `controlLag` | s | how long the controls take to follow |
 | `controlGain` | | share of each correction made at once |
+| `brakingShare` | | share of the angular acceleration the braking curve counts on, 0.5 by default |
 
-Three modes ship: **Normal** for general flying, **Cruise** for gentle, level-seeking long flights, and **Aggressive** for aerobatics and combat.
+Four modes ship, in this order: **Normal** for general flying, **Aggressive** for aerobatics and combat, **Unlimited**, with no load limit and the angle of attack limit at 30°, where stock wings make the most lift, and **Cruise** for gentle, level-seeking long flights.
 
 ## Settings
 
@@ -118,18 +122,30 @@ Saved to `GameData/MouseAimFlightRedux/PluginData/Settings.cfg`, which KSP doesn
 |---|---|---|
 | `toggleKey` | P | mouse aim on and off |
 | `modeKey` | O | next flight mode |
-| `mode` | Normal | last mode selected |
 | `mouseSensitivity` | 1 | degrees per mouse step |
 | `invertX`, `invertY` | False | |
 | `reticle` | Cross | nose marker: Cross, Dot or None |
 | `reticleOpacity` | 1 | |
 | `reticleSize` | 0.75 | fraction of 1/32 of the screen width |
+| `keepAtmosphereAutopilotOff` | True | see "Other autopilots", shown only with Atmosphere Autopilot installed |
 
 To bind a hotkey, click its button and press a key. Escape cancels.
 
 ## Control surface speed-up
 
-While mouse aim is on, stock control surfaces move 3.5 times faster and ease into position, which suits many small corrections. Each surface's own values are saved and put back exactly. Surfaces docked on while it's on are sped up as they arrive, and decoupled ones get their values back at once. Not applied under Ferram Aerospace Research, which drives its own surfaces.
+While mouse aim is on, stock control surfaces move 3.5 times faster and ease into position, which suits many small corrections. Each surface's own values are saved and put back exactly. Surfaces docked on while it's on are sped up as they arrive, and decoupled ones get their values back at once. Not applied under Ferram Aerospace Research, which drives its own surfaces. Only stock modules are sped up: `ModuleControlSurface` and its stock subclasses. Other mods' replacements keep their own movement, since the controller is tuned against stock surfaces. Atmosphere Autopilot replaces every stock control surface with its own at load, even when switched off, and those wobble when sped up.
+
+## Other autopilots
+
+Stock SAS and Atmosphere Autopilot steer through the same pitch, yaw and roll. SAS is always kept off while mouse aim is on. Atmosphere Autopilot is too, unless `keepAtmosphereAutopilotOff` is false:
+
+- **Turning on** records whether each was on, then switches it off.
+- **While on,** either one switched back on, by its key or anything else, goes off again in `LateUpdate`, before the next physics step.
+- **Turning off** switches back on whichever was on and was switched off. Atmosphere Autopilot goes first, since it switches SAS off as it starts. Nothing is restored on a destroyed vessel.
+
+Mouse aim flies in `OnPreAutopilotUpdate`, the earliest of the vessel's control callbacks going by their names and by how kOS and Atmosphere Autopilot use them. Atmosphere Autopilot flies in `OnAutopilotUpdate`, so when both are on it always runs second, reads mouse aim's output as the pilot's stick and flies that. Callbacks on one delegate run in the order they were added, which changes with vessel switches, so sharing `OnAutopilotUpdate` would not keep that order.
+
+Atmosphere Autopilot is optional and reached by reflection, through public members only: `AtmosphereAutopilot.Instance`, `getVesselModules(Vessel)` and `TopModuleManager.Active`, plus `mainMenuGUIUpdate()` to refresh its toolbar button, and the constant `SyncModuleControlSurface.CSURF_SPD`, the speed its surfaces move at when not set to ease. Checked against 1.6.1. If any is missing or throws, it's left alone for the rest of the session, with one log line.
 
 ## Markers and icon
 
@@ -139,3 +155,4 @@ Drawn into textures at startup from signed distance functions, antialiased over 
 
 - **KSP:** built against 1.12.5 for .NET Framework 4.7.2. KSP before 1.8 ran .NET 3.5, so it can't load there.
 - **Ferram Aerospace Research:** detected by assembly name, and the speed-up is skipped.
+- **Atmosphere Autopilot:** detected by assembly name and kept off unless the player lets them fly together, see "Other autopilots".

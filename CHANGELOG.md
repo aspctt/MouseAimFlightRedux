@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- SAS and Atmosphere Autopilot are kept off while mouse aim is on, and switched back on afterwards if they were on
+- A setting to let Atmosphere Autopilot fly together with mouse aim
+- An Unlimited flight mode, with no G limit and as much turning as stock wings can give
+- `maxG = 0` turns a flight mode's G limit off
+- A `brakingShare` flight mode key, for how hard it counts on stopping a rotation on target
+
+### Changed
+
+- Each game starts in Normal instead of the last flight mode used
+- Flight modes cycle Normal, Aggressive, Unlimited, Cruise
+- The nose marker is picked from a list that shows each marker
+
+### Fixed
+
+- Wobble with Atmosphere Autopilot installed. The control surface speed-up leaves other mods' control surfaces alone, and the controller allows for Atmosphere Autopilot's surfaces moving at a fixed speed
+
 ## [1.0.0] - 2026-09-25
 
 First release. Mouse Aim Flight Redux continues Mouse Aim Flight 1.1.3 by tetryds and ferram4, and the changes below are relative to it. Earlier history is in [the original repository](https://github.com/tetryds/MouseAimFlight).
