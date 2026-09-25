@@ -155,6 +155,6 @@ The Crosshair nose marker has a white centre dot and four arms with a gap betwee
 
 ## Compatibility
 
-- **KSP:** built against 1.12.5 for .NET Framework 4.7.2. KSP before 1.8 ran .NET 3.5, so it can't load there.
+- **KSP:** any 1.12 release, built against 1.12.5 for .NET Framework 4.7.2. KSP before 1.8 ran .NET 3.5, so it can't load there.
 - **Ferram Aerospace Research:** detected by assembly name, and the speed-up is skipped.
 - **Atmosphere Autopilot:** detected by assembly name and kept off unless the player lets them fly together, see "Other autopilots".
