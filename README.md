@@ -7,6 +7,8 @@
 </p>
 
 <p align=center>
+	<a href="https://forum.kerbalspaceprogram.com/topic/231839-1125-mouse-aim-flight-redux-fly-planes-with-your-mouse/"><img src="https://cdn.jsdelivr.net/gh/aspctt/MouseAimFlightRedux@main/docs/badges/ksp-forum.svg" alt="Available on the KSP Forums"></a>
+	<a href="https://spacedock.info/mod/4609/Mouse%20Aim%20Flight%20Redux"><img src="https://cdn.jsdelivr.net/gh/aspctt/MouseAimFlightRedux@main/docs/badges/spacedock.svg" alt="Available on SpaceDock"></a>
 	<a href="https://github.com/aspctt/MouseAimFlightRedux"><img src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/compact-minimal/available/github_vector.svg" alt="Available on GitHub"></a>
 </p>
 

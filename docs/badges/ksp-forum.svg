@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" viewBox="0 0 40 40">
+	<rect width="40" height="40" fill="url(#a)" rx="8"/>
+	<rect width="37.9" height="37.9" x="1.05" y="1.05" stroke="#fff" stroke-opacity=".15" stroke-width="2.1" rx="6.95"/>
+	<g filter="url(#b)">
+		<g transform="translate(4.375 5.25) scale(.625)">
+			<rect width="5" height="11.8" x="13.8" y="30.8" fill="#c46d04" rx="2.5"/>
+			<rect width="5" height="11.8" x="31.2" y="30.8" fill="#c46d04" rx="2.5"/>
+			<rect width="6" height="4.6" x="17.6" y="43" fill="#2b231d" rx="1.6"/>
+			<rect width="6" height="4.6" x="26.4" y="43" fill="#2b231d" rx="1.6"/>
+			<rect width="5.4" height="6" x="18.9" y="38" fill="#d67d05" rx="1.5"/>
+			<rect width="5.4" height="6" x="25.7" y="38" fill="#d67d05" rx="1.5"/>
+			<rect width="15" height="10" x="17.5" y="29.5" fill="#d67d05" rx="3.5"/>
+			<rect width="15" height="1.3" x="17.5" y="36.6" fill="#8a5208"/>
+			<rect width="1.5" height="3" x="20.6" y="30.4" fill="#2c4a66"/>
+			<rect width="1.5" height="3" x="27.9" y="30.4" fill="#2c4a66"/>
+			<rect width="15" height="2.4" x="17.5" y="28.8" fill="#7a7d78" rx="1.2"/>
+			<circle cx="25" cy="14.5" r="14.3" fill="#23282c" stroke="#8e979f" stroke-width="1.2"/>
+			<ellipse cx="25" cy="17.4" fill="url(#v)" rx="12" ry="9.8"/>
+			<g clip-path="url(#c)">
+				<rect width="11.6" height="20" x="19.2" y="9.2" fill="url(#f)" rx="3.6"/>
+			</g>
+			<circle cx="20.8" cy="18" r="2.2" fill="#f2f2f2"/>
+			<circle cx="29.2" cy="18" r="2.2" fill="#f2f2f2"/>
+			<circle cx="21.4" cy="18.2" r="1.1" fill="#1a1a1a"/>
+			<circle cx="28.6" cy="18.2" r="1.1" fill="#1a1a1a"/>
+		</g>
+	</g>
+	<defs>
+		<linearGradient id="a" x1="20" x2="20" y1="0" y2="40" gradientUnits="userSpaceOnUse">
+			<stop stop-color="#15253e"/>
+			<stop offset="1" stop-color="#0c1628"/>
+		</linearGradient>
+		<linearGradient id="v" x1="13" x2="37" y1="0" y2="0" gradientUnits="userSpaceOnUse">
+			<stop stop-color="#56626b"/>
+			<stop offset="1" stop-color="#2a3136"/>
+		</linearGradient>
+		<linearGradient id="f" x1="0" x2="0" y1="9.2" y2="27.2" gradientUnits="userSpaceOnUse">
+			<stop stop-color="#e8f97a"/>
+			<stop offset=".45" stop-color="#d6f02a"/>
+			<stop offset="1" stop-color="#a3bd16"/>
+		</linearGradient>
+		<clipPath id="c">
+			<ellipse cx="25" cy="17.4" rx="12" ry="9.8"/>
+		</clipPath>
+		<filter id="b" width="36" height="36" x="2" y="2" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+			<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+			<feColorMatrix in="SourceAlpha" result="hardAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"/>
+			<feOffset/>
+			<feGaussianBlur stdDeviation="2"/>
+			<feComposite in2="hardAlpha" operator="out"/>
+			<feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+			<feBlend in2="BackgroundImageFix" result="shadow"/>
+			<feBlend in="SourceGraphic" in2="shadow" result="shape"/>
+		</filter>
+	</defs>
+</svg>
