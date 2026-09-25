@@ -28,6 +28,7 @@ One addon per flight scene runs mouse aim for the active vessel, since only that
 | `AtmosphereAutopilot.cs` | Atmosphere Autopilot's master switch and surface speed, by reflection | |
 | `UI/Hud.cs` | The on-screen markers | BSD |
 | `UI/SettingsWindow.cs` | Toolbar button and settings window | BSD |
+| `UI/TuningOverlay.cs` | The tuning overlay | |
 | `UI/Reticles.cs` | Marker and icon textures | |
 | `Settings.cs` | Player settings | |
 | `Control/` | The controller and flight modes | |
@@ -114,20 +115,37 @@ A mode is a set of limits and response times for the same controller, read from 
 
 Four modes ship, in this order: **Normal** for general flying, **Aggressive** for aerobatics and combat, **Unlimited**, with no load limit and the angle of attack limit at 30°, where stock wings make the most lift, and **Cruise** for gentle, level-seeking long flights.
 
+## Tuning overlay
+
+A window for tuning flight modes, switched on in the settings. It shows the last physics step the controller flew, and while mouse aim is off it keeps showing the last flight.
+
+- **Top:** mode, airspeed, dynamic pressure, angle of attack, sideslip and G, then how far aircraft behaviour has faded in and how far the bank has committed toward the aim.
+- **Per axis:** the angle error, the rate asked for against the rate flown, and the limits the request is held to. When it's held at one, what set it: Rate, G or AoA. Then the input as it reached the vessel, the authority, and the fixed-speed share.
+- **Graphs:** 5.6 seconds per axis of the rate asked for, the rate flown, the input and the limits. Rates are scaled to 1.25 times the mode's rate limit and inputs to full travel. Anything off the scale runs along the edge.
+
+Reading it:
+
+- **Rate flown overshoots and rings around the rate asked for:** the rate loop is too eager. Lower `controlGain` or raise `rateResponse`, or raise `controlLag` if the surfaces are slower than it assumes.
+- **Rate asked for reverses late and the error crosses zero:** the attitude loop brakes too late. Lower `brakingShare` or raise `attitudeResponse`.
+- **Input at full travel and the rate still short:** the craft is out of authority. No setting fixes that.
+- **Pitch held by G or AoA:** the mode's limits are doing their job.
+
 ## Settings
 
 Saved to `GameData/MouseAimFlightRedux/PluginData/Settings.cfg`, which KSP doesn't load as config and updates never overwrite. Anything missing uses the default.
 
 | Key | Default | |
 |---|---|---|
-| `toggleKey` | P | mouse aim on and off |
-| `modeKey` | O | next flight mode |
+| `version` | 2 | file format. Files from before 2 with `toggleKey` P, the old default, move to Y |
+| `toggleKey` | Y | mouse aim on and off |
+| `modeKey` | O | next flight mode, read only while mouse aim is on |
 | `mouseSensitivity` | 1 | degrees per mouse step |
 | `invertX`, `invertY` | False | |
 | `reticle` | Crosshair | nose marker: Crosshair, Cross, Dot or None |
 | `reticleOpacity` | 1 | |
 | `reticleSize` | 0.75 | aim ring size, as a fraction of 1/32 of the screen width. The nose marker is half that |
 | `keepAtmosphereAutopilotOff` | True | see "Other autopilots", shown only with Atmosphere Autopilot installed |
+| `tuningOverlay` | False | shows the tuning overlay |
 
 To bind a hotkey, click its button and press a key. Escape cancels. "Reset to defaults" asks once more, then puts every setting above back to its default. Flight modes are untouched.
 
@@ -145,11 +163,13 @@ Stock SAS and Atmosphere Autopilot steer through the same pitch, yaw and roll. S
 
 Mouse aim flies in `OnPreAutopilotUpdate`, the earliest of the vessel's control callbacks going by their names and by how kOS and Atmosphere Autopilot use them. Atmosphere Autopilot flies in `OnAutopilotUpdate`, so when both are on it always runs second, reads mouse aim's output as the pilot's stick and flies that. Callbacks on one delegate run in the order they were added, which changes with vessel switches, so sharing `OnAutopilotUpdate` would not keep that order.
 
+The default keys stay clear of Atmosphere Autopilot's. Its master switch is P, so mouse aim toggles with Y. Its fly-by-wire moderation toggle is O, read only while its fly-by-wire is on, and the mode key O is read only while mouse aim is on, so each press reaches one of them unless they fly together.
+
 Atmosphere Autopilot is optional and reached by reflection, through public members only: `AtmosphereAutopilot.Instance`, `getVesselModules(Vessel)` and `TopModuleManager.Active`, plus `mainMenuGUIUpdate()` to refresh its toolbar button, and the constant `SyncModuleControlSurface.CSURF_SPD`, the speed its surfaces move at when not set to ease. Checked against 1.6.1. If any is missing or throws, it's left alone for the rest of the session, with one log line.
 
 ## Markers and icon
 
-Drawn into textures at startup from signed distance functions, antialiased over one pixel. No image files ship. Each mipmap is drawn from the shapes at its own size, so markers drawn small stay clean. The nose marker is drawn at half the aim ring's size, so it sits inside it.
+Drawn into textures the first time they're needed, from signed distance functions, antialiased over one pixel. No image files ship. Each mipmap is drawn from the shapes at its own size, so markers drawn small stay clean. The nose marker is drawn at half the aim ring's size, so it sits inside it.
 
 The Crosshair nose marker has a white centre dot and four arms with a gap between them. The outer half of each arm is a rounded rectangle of half see-through medium grey. The dot and those tips are outlined in black at 75% opacity, and the inner half of each arm is the same black, so it shows against bright sky and dark ground alike.
 

@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A tuning overlay, switched on in the settings, with live numbers and graphs of the rates asked for and flown, the limits and the inputs
+
 ### Changed
 
 - Supports every KSP 1.12 release, not just 1.12.5
+- Mouse aim now turns on and off with Y instead of P, which Atmosphere Autopilot uses. Saved settings still on P move to Y once
+- O only switches flight mode while mouse aim is on, so it no longer also toggles Atmosphere Autopilot's moderation
 
 ## [1.2.0] - 2026-09-25
 

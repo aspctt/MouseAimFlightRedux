@@ -1,39 +1,60 @@
-using System;
+//// Dependencies
+
 using System.Collections.Generic;
 
 namespace MouseAimFlightRedux.Control;
 
-/// <summary>The loaded flight modes and which one is selected, shared by every vessel.</summary>
+/// <summary>
+/// The loaded flight modes and which one is selected, shared by every vessel. Each game
+/// starts on the first.
+/// </summary>
 public static class FlightModes
 {
-	static List<FlightMode> modes;
-	static int index;
+	//// References and State
 
-	public static FlightMode Current
+	static List<FlightMode>? modes;
+	static int selectedIndex;
+
+	/// <summary>
+	/// The modes, read from the game database the first time they're needed.
+	/// </summary>
+	static List<FlightMode> Modes => modes ??= FlightMode.LoadFromDatabase();
+
+	//// Private Functions
+
+	/// <summary>
+	/// Swaps in newly loaded modes, keeping the selection by name where it still exists.
+	/// </summary>
+	static void Use(List<FlightMode> loaded)
 	{
-		get
+		// Remember the selection
+		var selectedName = modes?[selectedIndex].Name;
+		modes = loaded;
+
+		// Find it again, or start on the first mode
+		selectedIndex = 0;
+		for (var index = 0; index < loaded.Count; index++)
 		{
-			if (modes == null)
-				Use(FlightMode.LoadFromDatabase());
-			return modes[index];
+			if (loaded[index].Name == selectedName)
+			{
+				selectedIndex = index;
+				break;
+			}
 		}
 	}
 
+	//// Public API
+
+	public static FlightMode Current => Modes[selectedIndex];
+
 	public static FlightMode Next()
 	{
-		_ = Current;
-		index = (index + 1) % modes.Count;
-		return modes[index];
+		selectedIndex = (selectedIndex + 1) % Modes.Count;
+		return Modes[selectedIndex];
 	}
 
-	/// <summary>Re-reads the modes from disk, keeping the selection by name where it still exists.</summary>
+	/// <summary>
+	/// Re-reads the modes from disk, keeping the selection by name where it still exists.
+	/// </summary>
 	public static void ReloadFromDisk() => Use(FlightMode.LoadFromDisk());
-
-	/// <summary>Starts on the first mode, so each game begins in the same one.</summary>
-	static void Use(List<FlightMode> loaded)
-	{
-		var selected = modes?[index].Name;
-		modes = loaded;
-		index = Math.Max(modes.FindIndex(m => m.Name == selected), 0);
-	}
 }

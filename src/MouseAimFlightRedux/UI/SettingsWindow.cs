@@ -24,6 +24,8 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+//// Dependencies
+
 using System;
 using KSP.UI.Screens;
 using MouseAimFlightRedux.Control;
@@ -35,6 +37,8 @@ namespace MouseAimFlightRedux.UI;
 [KSPAddon(KSPAddon.Startup.Flight, false)]
 sealed class SettingsWindow : MonoBehaviour
 {
+	//// Types
+
 	enum KeyBinding
 	{
 		None,
@@ -42,93 +46,59 @@ sealed class SettingsWindow : MonoBehaviour
 		Mode,
 	}
 
-	const string BindingLockId = "MouseAimFlightReduxKeyBinding";
+	//// Constants
 
-	const float MarkerRowHeight = 30f;
+	const string BINDING_LOCK_IDENTIFIER = "MouseAimFlightReduxKeyBinding";
 
-	/// <summary>Kept across flight scenes so the window reopens where it was left.</summary>
+	const float MARKER_ROW_HEIGHT = 30f;
+
+	//// References and State
+
+	/// <summary>
+	/// Kept across flight scenes so the window reopens where it was left.
+	/// </summary>
 	static Rect windowRect;
 
-	ApplicationLauncherButton button;
-	bool visible;
+	ApplicationLauncherButton? button;
+	bool isVisible;
 	KeyBinding binding;
-	bool markerListOpen;
-	GUIStyle markerRowStyle;
-	bool confirmingReset;
+	bool isMarkerListOpen;
+	GUIStyle? markerRowStyle;
+	bool isConfirmingReset;
 
 	/// <summary>
-	/// The key that just ended a binding. Unity can hand a key press to the window a frame before the game sees it, so
-	/// the keyboard stays locked until the key is let go, or a new hotkey would fire straight away.
+	/// The key that just ended a binding. Unity can hand a key press to the window a
+	/// frame before the game sees it, so the keyboard stays locked until the key is let
+	/// go, or a new hotkey would fire straight away.
 	/// </summary>
-	KeyCode releasePending;
+	KeyCode pendingReleaseKey;
 
 	/// <summary>
-	/// A layout window grows to fit its contents but never shrinks back on its own, so it's cut down to size after the
-	/// marker list closes.
+	/// A layout window grows to fit its contents but never shrinks back on its own, so
+	/// it's cut down to size after the marker list closes.
 	/// </summary>
-	bool shrink;
+	bool shouldShrink;
 
-	void Start()
+	GUIStyle MarkerRowStyle => markerRowStyle ??= new GUIStyle(HighLogic.Skin.button) { alignment = TextAnchor.MiddleLeft };
+
+	//// Private Functions
+
+	void DrawWindow(int windowIdentifier)
 	{
-		Reticles.Build();
-		if (windowRect.width <= 0f)
-			windowRect = new Rect(Screen.width - 340f, 100f, 280f, 0f);
-
-		GameEvents.onGUIApplicationLauncherReady.Add(AddButton);
-		GameEvents.onGUIApplicationLauncherDestroyed.Add(RemoveButton);
-		if (ApplicationLauncher.Ready)
-			AddButton();
-	}
-
-	void OnDestroy()
-	{
-		GameEvents.onGUIApplicationLauncherReady.Remove(AddButton);
-		GameEvents.onGUIApplicationLauncherDestroyed.Remove(RemoveButton);
-		RemoveButton();
-		EndBinding();
-		Settings.Instance.Save();
-	}
-
-	void Update()
-	{
-		if (binding != KeyBinding.None || releasePending == KeyCode.None)
-			return;
-		if (Input.GetKey(releasePending) || Input.GetKeyDown(releasePending))
-			return;
-
-		releasePending = KeyCode.None;
-		InputLockManager.RemoveControlLock(BindingLockId);
-	}
-
-	void OnGUI()
-	{
-		if (!visible)
-			return;
-
-		if (binding != KeyBinding.None)
-			CaptureKey();
-
-		GUI.skin = HighLogic.Skin;
-		markerRowStyle ??= new GUIStyle(HighLogic.Skin.button) { alignment = TextAnchor.MiddleLeft };
-		if (shrink)
-		{
-			windowRect.height = 0f;
-			shrink = false;
-		}
-		windowRect = GUILayout.Window(GetHashCode(), windowRect, DrawWindow, "Mouse Aim Flight Redux");
-	}
-
-	void DrawWindow(int windowId)
-	{
+		// Capture what this frame shows
+		// Layout and the events after it must see the same controls, so a click only
+		// opens or closes the list, or the reset question, from the next frame on.
 		var settings = Settings.Instance;
-
+		var isListOpen = isMarkerListOpen;
+		var isConfirming = isConfirmingReset;
 		GUILayout.BeginVertical(GUILayout.Width(260));
 
+		// Draw the hotkeys
 		KeyRow("Toggle mouse aim", KeyBinding.Toggle, settings.ToggleKey);
 		KeyRow("Next flight mode", KeyBinding.Mode, settings.ModeKey);
-
 		GUILayout.Space(10);
 
+		// Draw the flight mode
 		GUILayout.BeginHorizontal();
 		GUILayout.Label("Flight mode: " + FlightModes.Current.Name);
 		if (GUILayout.Button("Next", GUILayout.Width(60)))
@@ -136,16 +106,12 @@ sealed class SettingsWindow : MonoBehaviour
 		GUILayout.EndHorizontal();
 		if (GUILayout.Button("Reload flight modes from disk"))
 			FlightModes.ReloadFromDisk();
-
 		GUILayout.Space(10);
 
-		// Layout and the events after it must see the same controls, so a click only opens or closes the list, or the
-		// reset question, from the next frame on.
-		var listOpen = markerListOpen;
-		var confirming = confirmingReset;
+		// Draw the nose marker button, its preview and its list
 		GUILayout.BeginHorizontal();
 		if (GUILayout.Button("Nose marker: " + settings.Reticle, GUILayout.Width(180)))
-			SetMarkerListOpen(!markerListOpen);
+			SetMarkerListOpen(!isMarkerListOpen);
 		var preview = GUILayoutUtility.GetRect(48, 48, GUILayout.Width(48), GUILayout.Height(48));
 		var nose = Reticles.Nose(settings.Reticle);
 		if (nose != null)
@@ -156,30 +122,30 @@ sealed class SettingsWindow : MonoBehaviour
 			GUI.color = oldColor;
 		}
 		GUILayout.EndHorizontal();
-
-		if (listOpen)
+		if (isListOpen)
 			MarkerList(settings);
-
 		GUILayout.Space(10);
 
+		// Draw the sliders and toggles
 		GUILayout.Label("Mouse Sensitivity: " + settings.MouseSensitivity.ToString("0.00"));
 		settings.MouseSensitivity = GUILayout.HorizontalSlider(settings.MouseSensitivity, 0.25f, 5f);
 		GUILayout.Label("Marker Opacity: " + settings.ReticleOpacity.ToString("0.00"));
 		settings.ReticleOpacity = GUILayout.HorizontalSlider(settings.ReticleOpacity, 0f, 1f);
 		GUILayout.Label("Marker Size: " + settings.ReticleSize.ToString("0.00"));
 		settings.ReticleSize = GUILayout.HorizontalSlider(settings.ReticleSize, 0.4f, 1f);
-		settings.InvertX = GUILayout.Toggle(settings.InvertX, "Invert X Axis");
-		settings.InvertY = GUILayout.Toggle(settings.InvertY, "Invert Y Axis");
-		if (AtmosphereAutopilot.Available)
-			settings.KeepAtmosphereAutopilotOff = GUILayout.Toggle(settings.KeepAtmosphereAutopilotOff, "Keep Atmosphere Autopilot Off");
-
+		settings.ShouldInvertX = GUILayout.Toggle(settings.ShouldInvertX, "Invert X Axis");
+		settings.ShouldInvertY = GUILayout.Toggle(settings.ShouldInvertY, "Invert Y Axis");
+		if (AtmosphereAutopilot.IsAvailable)
+			settings.ShouldKeepAtmosphereAutopilotOff = GUILayout.Toggle(settings.ShouldKeepAtmosphereAutopilotOff, "Keep Atmosphere Autopilot Off");
+		settings.ShouldShowTuningOverlay = GUILayout.Toggle(settings.ShouldShowTuningOverlay, "Show Tuning Overlay");
 		GUILayout.Space(10);
 
+		// Draw the reset button
 		// Asks once more first, since there's no undo.
-		if (!confirming)
+		if (!isConfirming)
 		{
 			if (GUILayout.Button("Reset to defaults"))
-				confirmingReset = true;
+				isConfirmingReset = true;
 		}
 		else
 		{
@@ -188,32 +154,36 @@ sealed class SettingsWindow : MonoBehaviour
 			if (GUILayout.Button("Yes", GUILayout.Width(50)))
 				ResetToDefaults();
 			if (GUILayout.Button("No", GUILayout.Width(50)))
-				confirmingReset = false;
+				isConfirmingReset = false;
 			GUILayout.EndHorizontal();
 		}
 
 		GUILayout.EndVertical();
-
 		GUI.DragWindow();
 	}
 
-	/// <summary>Opens under the nose marker button: one row per marker, its name on the left and the marker on the right.</summary>
+	/// <summary>
+	/// Opens under the nose marker button: one row per marker, its name on the left and
+	/// the marker on the right.
+	/// </summary>
 	void MarkerList(Settings settings)
 	{
 		foreach (ReticleStyle style in Enum.GetValues(typeof(ReticleStyle)))
 		{
-			var row = GUILayoutUtility.GetRect(180f, MarkerRowHeight, GUILayout.Width(180f), GUILayout.Height(MarkerRowHeight));
-			var chosen = style == settings.Reticle;
-			if (GUI.Toggle(row, chosen, style.ToString(), markerRowStyle) != chosen)
+			// Draw the row as a button
+			var row = GUILayoutUtility.GetRect(180f, MARKER_ROW_HEIGHT, GUILayout.Width(180f), GUILayout.Height(MARKER_ROW_HEIGHT));
+			var isChosen = style == settings.Reticle;
+			if (GUI.Toggle(row, isChosen, style.ToString(), MarkerRowStyle) != isChosen)
 			{
 				settings.Reticle = style;
 				SetMarkerListOpen(false);
 			}
 
+			// Draw its marker at the right end
 			var marker = Reticles.Nose(style);
 			if (marker != null)
 			{
-				var size = MarkerRowHeight - 6f;
+				var size = MARKER_ROW_HEIGHT - 6f;
 				GUI.DrawTexture(new Rect(row.xMax - size - 6f, row.y + 3f, size, size), marker);
 			}
 		}
@@ -223,15 +193,15 @@ sealed class SettingsWindow : MonoBehaviour
 	{
 		EndBinding();
 		SetMarkerListOpen(false);
-		confirmingReset = false;
+		isConfirmingReset = false;
 		Settings.ResetToDefaults();
 	}
 
-	void SetMarkerListOpen(bool open)
+	void SetMarkerListOpen(bool isOpen)
 	{
-		if (markerListOpen && !open)
-			shrink = true;
-		markerListOpen = open;
+		if (isMarkerListOpen && !isOpen)
+			shouldShrink = true;
+		isMarkerListOpen = isOpen;
 	}
 
 	void KeyRow(string label, KeyBinding which, KeyCode key)
@@ -250,78 +220,136 @@ sealed class SettingsWindow : MonoBehaviour
 
 	void BeginBinding(KeyBinding which)
 	{
+		// Keep the key being bound from also flying the vessel or firing a hotkey
 		binding = which;
-		releasePending = KeyCode.None;
-		// Keep the key being bound from also flying the vessel or firing a hotkey.
-		InputLockManager.SetControlLock(ControlTypes.KEYBOARDINPUT, BindingLockId);
+		pendingReleaseKey = KeyCode.None;
+		InputLockManager.SetControlLock(ControlTypes.KEYBOARDINPUT, BINDING_LOCK_IDENTIFIER);
 	}
 
 	void EndBinding()
 	{
 		binding = KeyBinding.None;
-		releasePending = KeyCode.None;
-		InputLockManager.RemoveControlLock(BindingLockId);
+		pendingReleaseKey = KeyCode.None;
+		InputLockManager.RemoveControlLock(BINDING_LOCK_IDENTIFIER);
 	}
 
 	void CaptureKey()
 	{
-		var current = Event.current;
-		if (current.type != EventType.KeyDown || current.keyCode == KeyCode.None)
+		// Sanity check
+		var currentEvent = Event.current;
+		if (currentEvent.type != EventType.KeyDown || currentEvent.keyCode == KeyCode.None)
 			return;
 
-		if (current.keyCode != KeyCode.Escape)
+		// Bind the key, unless it's Escape
+		if (currentEvent.keyCode != KeyCode.Escape)
 		{
 			var settings = Settings.Instance;
 			if (binding == KeyBinding.Toggle)
-				settings.ToggleKey = current.keyCode;
+				settings.ToggleKey = currentEvent.keyCode;
 			else
-				settings.ModeKey = current.keyCode;
+				settings.ModeKey = currentEvent.keyCode;
 			settings.Save();
 		}
 
-		// The lock stays on until Update sees the key let go.
-		releasePending = current.keyCode;
+		// Hold the lock until Update sees the key let go
+		pendingReleaseKey = currentEvent.keyCode;
 		binding = KeyBinding.None;
-		current.Use();
+		currentEvent.Use();
 	}
 
-	void AddButton()
+	void OnApplicationLauncherReady()
 	{
+		// Sanity check
 		if (button != null || !ApplicationLauncher.Ready)
 			return;
 
-		button = ApplicationLauncher.Instance.AddModApplication(
-			Show,
-			Hide,
-			null,
-			null,
-			null,
-			null,
-			ApplicationLauncher.AppScenes.FLIGHT,
-			Reticles.Icon);
+		// Add the button
+		button = ApplicationLauncher.Instance.AddModApplication(OnToolbarButtonOn, OnToolbarButtonOff, null, null, null, null, ApplicationLauncher.AppScenes.FLIGHT, Reticles.Icon);
 	}
 
-	void RemoveButton()
+	void OnApplicationLauncherDestroyed()
 	{
+		// Sanity check
 		if (button == null)
 			return;
 
+		// Remove the button
 		if (ApplicationLauncher.Instance != null)
 			ApplicationLauncher.Instance.RemoveModApplication(button);
 		button = null;
 	}
 
-	void Show()
+	void OnToolbarButtonOn()
 	{
-		visible = true;
+		isVisible = true;
 	}
 
-	void Hide()
+	void OnToolbarButtonOff()
 	{
-		visible = false;
+		// Sanity check
+		if (!isVisible)
+			return;
+
+		// Close the window and save
+		isVisible = false;
 		EndBinding();
 		SetMarkerListOpen(false);
-		confirmingReset = false;
+		isConfirmingReset = false;
 		Settings.Instance.Save();
+	}
+
+	//// Event Wiring
+
+	void Start()
+	{
+		if (windowRect.width <= 0f)
+			windowRect = new Rect(Screen.width - 340f, 100f, 280f, 0f);
+
+		GameEvents.onGUIApplicationLauncherReady.Add(OnApplicationLauncherReady);
+		GameEvents.onGUIApplicationLauncherDestroyed.Add(OnApplicationLauncherDestroyed);
+		if (ApplicationLauncher.Ready)
+			OnApplicationLauncherReady();
+	}
+
+	void OnDestroy()
+	{
+		GameEvents.onGUIApplicationLauncherReady.Remove(OnApplicationLauncherReady);
+		GameEvents.onGUIApplicationLauncherDestroyed.Remove(OnApplicationLauncherDestroyed);
+		OnApplicationLauncherDestroyed();
+		EndBinding();
+		Settings.Instance.Save();
+	}
+
+	void Update()
+	{
+		// Sanity check
+		if (binding != KeyBinding.None || pendingReleaseKey == KeyCode.None)
+			return;
+		if (Input.GetKey(pendingReleaseKey) || Input.GetKeyDown(pendingReleaseKey))
+			return;
+
+		// Let go of the keyboard once the bound key is up
+		pendingReleaseKey = KeyCode.None;
+		InputLockManager.RemoveControlLock(BINDING_LOCK_IDENTIFIER);
+	}
+
+	void OnGUI()
+	{
+		// Sanity check
+		if (!isVisible)
+			return;
+
+		// Take a key being bound
+		if (binding != KeyBinding.None)
+			CaptureKey();
+
+		// Draw the window, cut down to size if something closed
+		GUI.skin = HighLogic.Skin;
+		if (shouldShrink)
+		{
+			windowRect.height = 0f;
+			shouldShrink = false;
+		}
+		windowRect = GUILayout.Window(GetHashCode(), windowRect, DrawWindow, "Mouse Aim Flight Redux");
 	}
 }

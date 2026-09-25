@@ -24,51 +24,69 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+//// Dependencies
+
 using UnityEngine;
 
 namespace MouseAimFlightRedux;
 
 /// <summary>
-/// The aim the mouse moves. Held in world space relative to the centre of mass, so it stays put as the aircraft turns,
-/// and moved in the camera's frame, so moving the mouse right always moves it right on screen. See docs/DESIGN.md,
-/// "Aim point".
+/// The aim the mouse moves. Held in world space relative to the centre of mass, so it
+/// stays put as the aircraft turns, and moved in the camera's frame, so moving the mouse
+/// right always moves it right on screen. See docs/DESIGN.md, "Aim point".
 /// </summary>
 sealed class AimTracker
 {
-	/// <summary>How far ahead of the centre of mass the aim point sits, m.</summary>
-	public const float Distance = 5000f;
+	//// Constants
 
-	/// <summary>Aim point relative to the vessel's centre of mass, in world space.</summary>
+	/// <summary>How far ahead of the centre of mass the aim point sits, m.</summary>
+	public const float DISTANCE = 5000f;
+
+	//// References and State
+
+	/// <summary>
+	/// Aim point relative to the vessel's centre of mass, in world space.
+	/// </summary>
 	public Vector3 Aim { get; private set; }
 
-	/// <summary>True while the mouse is moving the camera instead, which freezes the aim.</summary>
-	public bool FreeLook { get; private set; }
+	/// <summary>
+	/// True while the mouse is moving the camera instead, which freezes the aim.
+	/// </summary>
+	public bool IsFreeLooking { get; private set; }
 
-	public void Recentre(Vessel vessel) => Aim = vessel.ReferenceTransform.up * Distance;
+	//// Public API
 
-	/// <summary>Moves the aim by this frame's mouse movement, unless free look has the mouse.</summary>
+	public void Recentre(Vessel vessel) => Aim = vessel.ReferenceTransform.up * DISTANCE;
+
+	/// <summary>
+	/// Moves the aim by this frame's mouse movement, unless free look has the mouse.
+	/// </summary>
 	public void Follow(Settings settings, Transform camera)
 	{
-		if (FreeLook)
+		// Sanity check
+		if (IsFreeLooking)
 			return;
 
-		var delta = new Vector3(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y")) * (settings.MouseSensitivity * Mathf.Deg2Rad * Distance);
-		if (settings.InvertX)
-			delta.x = -delta.x;
-		if (settings.InvertY)
-			delta.y = -delta.y;
+		// Read the mouse
+		var movement = new Vector3(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y")) * (settings.MouseSensitivity * Mathf.Deg2Rad * DISTANCE);
+		if (settings.ShouldInvertX)
+			movement.x = -movement.x;
+		if (settings.ShouldInvertY)
+			movement.y = -movement.y;
 
-		var local = camera.InverseTransformDirection(Aim) + delta;
-		Aim = camera.TransformDirection(local.normalized * Distance);
+		// Move the aim across the camera's view
+		var local = camera.InverseTransformDirection(Aim) + movement;
+		Aim = camera.TransformDirection(local.normalized * DISTANCE);
 	}
 
 	/// <summary>
-	/// Free look is the right mouse button held, or KSP's own mouse look. Returns true on the frame it starts or ends.
+	/// Free look is the right mouse button held, or KSP's own mouse look. Returns true on
+	/// the frame it starts or ends.
 	/// </summary>
 	public bool UpdateFreeLook()
 	{
-		var was = FreeLook;
-		FreeLook = Mouse.Right.GetButton() || CameraMouseLook.MouseLocked;
-		return FreeLook != was;
+		var isFreeLookingBefore = IsFreeLooking;
+		IsFreeLooking = Mouse.Right.GetButton() || CameraMouseLook.MouseLocked;
+		return IsFreeLooking != isFreeLookingBefore;
 	}
 }

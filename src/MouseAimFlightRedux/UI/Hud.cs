@@ -24,45 +24,65 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+//// Dependencies
+
 using UnityEngine;
 
 namespace MouseAimFlightRedux.UI;
 
-/// <summary>The markers drawn over the flight view: a ring at the aim, and the chosen marker at the nose.</summary>
+/// <summary>
+/// The markers drawn over the flight view: a ring at the aim, and the chosen marker at
+/// the nose.
+/// </summary>
 static class Hud
 {
-	/// <summary>The nose marker's size against the aim ring's, so it fits inside the ring.</summary>
-	const float NoseScale = 0.5f;
+	//// Constants
 
-	/// <summary>Call from OnGUI. Positions are taken at repaint, after the camera has moved for the frame.</summary>
-	public static void Draw(Vessel vessel, Vector3 aim, Camera camera)
-	{
-		if (Event.current.type != EventType.Repaint)
-			return;
+	/// <summary>
+	/// The nose marker's size against the aim ring's, so it fits inside the ring.
+	/// </summary>
+	const float NOSE_SCALE = 0.5f;
 
-		Reticles.Build();
-		var settings = Settings.Instance;
-		var size = settings.ReticleSize * Screen.width / 32f;
-		var centre = vessel.CoM;
-
-		var oldColor = GUI.color;
-		GUI.color = new Color(1f, 1f, 1f, settings.ReticleOpacity);
-
-		DrawAt(camera.WorldToScreenPoint(centre + aim), size, Reticles.Aim);
-
-		var nose = Reticles.Nose(settings.Reticle);
-		if (nose != null)
-			DrawAt(camera.WorldToScreenPoint(centre + vessel.ReferenceTransform.up * AimTracker.Distance), size * NoseScale, nose);
-
-		GUI.color = oldColor;
-	}
+	//// Private Functions
 
 	static void DrawAt(Vector3 screenPoint, float size, Texture2D texture)
 	{
-		// Behind the camera.
+		// Sanity check
+		// A point behind the camera has nothing to show.
 		if (screenPoint.z <= 0f)
 			return;
 
+		// Draw it centred on the point
 		GUI.DrawTexture(new Rect(screenPoint.x - 0.5f * size, Screen.height - screenPoint.y - 0.5f * size, size, size), texture);
+	}
+
+	//// Public API
+
+	/// <summary>
+	/// Call from OnGUI. Positions are taken at repaint, after the camera has moved for
+	/// the frame.
+	/// </summary>
+	public static void Draw(Vessel vessel, Vector3 aim, Camera camera)
+	{
+		// Sanity check
+		if (Event.current.type != EventType.Repaint)
+			return;
+
+		// Size and tint the markers
+		var settings = Settings.Instance;
+		var size = settings.ReticleSize * Screen.width / 32f;
+		var centreOfMass = vessel.CoM;
+		var oldColor = GUI.color;
+		GUI.color = new Color(1f, 1f, 1f, settings.ReticleOpacity);
+
+		// Draw the aim ring
+		DrawAt(camera.WorldToScreenPoint(centreOfMass + aim), size, Reticles.Aim);
+
+		// Draw the nose marker
+		var nose = Reticles.Nose(settings.Reticle);
+		if (nose != null)
+			DrawAt(camera.WorldToScreenPoint(centreOfMass + vessel.ReferenceTransform.up * AimTracker.DISTANCE), size * NOSE_SCALE, nose);
+
+		GUI.color = oldColor;
 	}
 }

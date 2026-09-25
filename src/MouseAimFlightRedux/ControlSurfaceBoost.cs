@@ -24,94 +24,140 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+//// Dependencies
+
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace MouseAimFlightRedux;
 
 /// <summary>
-/// While mouse aim is on, stock control surfaces move faster and ease into position, which suits a controller making
-/// many small corrections. Each surface's own values are recorded and put back exactly, including surfaces that join
-/// or leave the vessel in between. Not applied under FAR, which drives its control surfaces itself, or to other mods'
-/// replacements for the stock modules, which move their surfaces their own way. See docs/DESIGN.md, "Control surface
-/// speed-up".
+/// While mouse aim is on, stock control surfaces move faster and ease into position,
+/// which suits a controller making many small corrections. Each surface's own values are
+/// recorded and put back exactly, including surfaces that join or leave the vessel in
+/// between. Not applied under Ferram Aerospace Research, which drives its control
+/// surfaces itself, or to other mods' replacements for the stock modules, which move
+/// their surfaces their own way. See docs/DESIGN.md, "Control surface speed-up".
 /// </summary>
 sealed class ControlSurfaceBoost
 {
-	const float SpeedFactor = 3.5f;
+	//// Types
 
-	struct Original
+	struct OriginalSettings
 	{
 		public float ActuatorSpeed;
-		public bool UseExponentialSpeed;
+		public bool IsUsingExponentialSpeed;
 	}
 
-	readonly Dictionary<ModuleControlSurface, Original> originals = new();
-	Vessel vessel;
+	//// Constants
+
+	const float SPEED_FACTOR = 3.5f;
+
+	//// References and State
+
+	readonly Dictionary<ModuleControlSurface, OriginalSettings> originals = new();
+
+	/// <summary>
+	/// Surfaces that have left the vessel, gathered before they're put back.
+	/// </summary>
+	readonly List<ModuleControlSurface> departed = new();
+
+	Vessel? vessel;
+
+	//// Private Functions
+
+	/// <summary>
+	/// ModuleControlSurface or a stock subclass such as ModuleAeroSurface. Atmosphere
+	/// Autopilot, for one, swaps in its own subclass whose surfaces follow these settings
+	/// differently.
+	/// </summary>
+	static bool IsStock(ModuleControlSurface surface) => surface.GetType().Assembly == typeof(ModuleControlSurface).Assembly;
+
+	/// <summary>
+	/// Unity reports a destroyed object as null while references to it remain, like the
+	/// keys here. Asked through a function so the compiler doesn't take the key itself
+	/// for null.
+	/// </summary>
+	static bool IsDestroyed(ModuleControlSurface surface) => surface == null;
+
+	static void PutBack(ModuleControlSurface surface, OriginalSettings original)
+	{
+		surface.actuatorSpeed = original.ActuatorSpeed;
+		surface.useExponentialSpeed = original.IsUsingExponentialSpeed;
+	}
+
+	//// Public API
 
 	public void Apply(Vessel target)
 	{
-		Restore();
-		if (target == null || Settings.FarLoaded)
+		// Sanity check
+		if (target == vessel)
 			return;
 
+		// Let go of any earlier vessel
+		Restore();
+		if (target == null || Settings.IsFerramAerospaceResearchLoaded)
+			return;
+
+		// Speed up this one
 		vessel = target;
 		Refresh();
 		Debug.Log($"[MouseAimFlightRedux] Sped up {originals.Count} control surfaces");
 	}
 
-	/// <summary>Speeds up surfaces that have joined the vessel, and puts back those that have left it.</summary>
+	/// <summary>
+	/// Speeds up surfaces that have joined the vessel, and puts back those that have left
+	/// it.
+	/// </summary>
 	public void Refresh()
 	{
+		// Sanity check
 		if (vessel == null)
 			return;
 
-		// A surface decoupled onto another vessel still exists and keeps flying, so it gets its own values back.
-		var gone = originals.Keys.Where(surface => surface == null || surface.vessel != vessel).ToList();
-		foreach (var surface in gone)
+		// Put back surfaces that have left
+		// A surface decoupled onto another vessel still exists and keeps flying, so it
+		// gets its own values back.
+		departed.Clear();
+		foreach (var surface in originals.Keys)
 		{
-			if (surface != null)
-				Put(surface, originals[surface]);
+			if (IsDestroyed(surface) || surface.vessel != vessel)
+				departed.Add(surface);
+		}
+		foreach (var surface in departed)
+		{
+			if (!IsDestroyed(surface))
+				PutBack(surface, originals[surface]);
 			originals.Remove(surface);
 		}
+		departed.Clear();
 
+		// Speed up surfaces that have joined
 		foreach (var surface in vessel.FindPartModulesImplementing<ModuleControlSurface>())
 		{
 			if (originals.ContainsKey(surface) || !IsStock(surface))
 				continue;
 
-			originals[surface] = new Original { ActuatorSpeed = surface.actuatorSpeed, UseExponentialSpeed = surface.useExponentialSpeed };
-			surface.actuatorSpeed *= SpeedFactor;
+			originals[surface] = new OriginalSettings { ActuatorSpeed = surface.actuatorSpeed, IsUsingExponentialSpeed = surface.useExponentialSpeed };
+			surface.actuatorSpeed *= SPEED_FACTOR;
 			surface.useExponentialSpeed = true;
 		}
 	}
 
 	public void Restore()
 	{
+		// Sanity check
 		if (vessel == null)
 			return;
 
+		// Put every surface back
 		foreach (var pair in originals)
 		{
-			if (pair.Key != null)
-				Put(pair.Key, pair.Value);
+			if (!IsDestroyed(pair.Key))
+				PutBack(pair.Key, pair.Value);
 		}
 		Debug.Log($"[MouseAimFlightRedux] Restored {originals.Count} control surfaces");
-
 		originals.Clear();
 		vessel = null;
-	}
-
-	/// <summary>
-	/// ModuleControlSurface or a stock subclass such as ModuleAeroSurface. Atmosphere Autopilot, for one, swaps in its
-	/// own subclass whose surfaces follow these settings differently.
-	/// </summary>
-	static bool IsStock(ModuleControlSurface surface) => surface.GetType().Assembly == typeof(ModuleControlSurface).Assembly;
-
-	static void Put(ModuleControlSurface surface, Original original)
-	{
-		surface.actuatorSpeed = original.ActuatorSpeed;
-		surface.useExponentialSpeed = original.UseExponentialSpeed;
 	}
 }

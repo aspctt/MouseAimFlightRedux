@@ -24,6 +24,8 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+//// Dependencies
+
 using MouseAimFlightRedux.Control;
 using MouseAimFlightRedux.UI;
 using UnityEngine;
@@ -31,23 +33,137 @@ using UnityEngine;
 namespace MouseAimFlightRedux;
 
 /// <summary>
-/// Runs mouse aim for whichever vessel is active: the hotkeys, the cursor, the aim, and the inputs sent each physics
-/// frame. One per flight scene. See docs/DESIGN.md, "Structure".
+/// Runs mouse aim for whichever vessel is active: the hotkeys, the cursor, the aim, and
+/// the inputs sent each physics frame. One per flight scene. See docs/DESIGN.md,
+/// "Structure".
 /// </summary>
 [KSPAddon(KSPAddon.Startup.Flight, false)]
 sealed class MouseAimPilot : MonoBehaviour
 {
+	//// References and State
+
 	readonly AimTracker aim = new();
 	readonly Autopilot autopilot = new();
 	readonly ControlSurfaceBoost boost = new();
 	readonly AutopilotLockout lockout = new();
+	readonly TuningOverlay tuning = new();
 
-	Vessel vessel;
-	VesselDynamics dynamics;
-	bool active;
+	Vessel? vessel;
+	VesselDynamics? dynamics;
+	bool isActive;
 
-	/// <summary>Set in the physics callback while the pilot holds pitch or yaw, read by the aim in Update.</summary>
-	bool pilotOverride;
+	/// <summary>
+	/// Set in the physics callback while the pilot holds pitch or yaw, read by the aim in
+	/// Update.
+	/// </summary>
+	bool isPilotOverriding;
+
+	//// Private Functions
+
+	static void LockCursor(bool isLocked)
+	{
+		Cursor.lockState = isLocked ? CursorLockMode.Locked : CursorLockMode.None;
+		Cursor.visible = !isLocked;
+	}
+
+	void SetActive(bool shouldBeActive, bool shouldAnnounce)
+	{
+		// Sanity check
+		if (shouldBeActive == isActive)
+			return;
+
+		// Switch over
+		isActive = shouldBeActive && vessel != null;
+		LockCursor(isActive);
+		autopilot.Reset();
+		isPilotOverriding = false;
+
+		// Turn off, giving back whatever was taken over
+		if (!isActive || vessel == null)
+		{
+			boost.Restore();
+			lockout.Release();
+			if (shouldAnnounce)
+				ScreenMessages.PostScreenMessage("Mouse aim: Off");
+			return;
+		}
+
+		// Turn on
+		aim.Recentre(vessel);
+		dynamics?.Invalidate();
+		tuning.Clear();
+		boost.Apply(vessel);
+		lockout.Engage(vessel);
+		if (shouldAnnounce)
+			ScreenMessages.PostScreenMessage("Mouse aim: " + FlightModes.Current.Name);
+	}
+
+	/// <summary>
+	/// Moves mouse aim to another vessel, switching it off first. Null lets go of the
+	/// current one.
+	/// </summary>
+	void Bind(Vessel? next)
+	{
+		// Let go of the current vessel
+		SetActive(false, next != null);
+		if (vessel != null)
+			vessel.OnPreAutopilotUpdate -= OnPreAutopilotUpdate;
+
+		// Take the next one
+		// Mouse aim flies in the earliest of the vessel's control callbacks, so
+		// autopilots on the later ones, like Atmosphere Autopilot flying together with
+		// mouse aim, take its output as their input whichever of them hooked in first.
+		vessel = next;
+		dynamics = next != null ? new VesselDynamics(next) : null;
+		if (next != null)
+			next.OnPreAutopilotUpdate += OnPreAutopilotUpdate;
+	}
+
+	void OnPreAutopilotUpdate(FlightCtrlState state)
+	{
+		// Sanity check
+		if (!isActive || dynamics == null || PauseMenu.isOpen || vessel != FlightGlobals.ActiveVessel)
+			return;
+
+		// Let the pilot take over pitch and yaw
+		if (state.pitch != state.pitchTrim || state.yaw != state.yawTrim)
+		{
+			isPilotOverriding = true;
+			autopilot.Reset();
+			return;
+		}
+		isPilotOverriding = false;
+
+		// Measure the vessel
+		var deltaTime = TimeWarp.fixedDeltaTime;
+		dynamics.Update(deltaTime);
+		if (!dynamics.IsValid)
+			return;
+
+		// Fly toward the aim, leaving roll to the pilot while they hold it
+		autopilot.Drive(dynamics, aim.Aim, FlightModes.Current, deltaTime, out var pitch, out var yaw, out var roll);
+		state.pitch = pitch;
+		state.yaw = yaw;
+		if (state.roll == state.rollTrim)
+			state.roll = roll;
+
+		// Feed back what reached the vessel
+		autopilot.Applied(state.pitch, state.yaw, state.roll);
+		tuning.Record(autopilot);
+	}
+
+	void OnVesselModified(Vessel modified)
+	{
+		// Sanity check
+		if (!isActive || modified != vessel)
+			return;
+
+		// Measure it again
+		boost.Refresh();
+		dynamics?.Invalidate();
+	}
+
+	//// Event Wiring
 
 	void Start()
 	{
@@ -58,39 +174,42 @@ sealed class MouseAimPilot : MonoBehaviour
 	{
 		GameEvents.onVesselWasModified.Remove(OnVesselModified);
 		Bind(null);
+		tuning.Destroy();
 	}
 
 	void Update()
 	{
-		var current = FlightGlobals.ActiveVessel;
-		if (current != vessel)
-			Bind(current);
+		// Follow the active vessel
+		var activeVessel = FlightGlobals.ActiveVessel;
+		if (activeVessel != vessel)
+			Bind(activeVessel);
 		if (vessel == null)
 			return;
 
-		// The pause menu and a kerbal on EVA both need the cursor back.
+		// Give the cursor back for the pause menu and a kerbal on EVA
 		if (PauseMenu.isOpen || vessel.isEVA)
 		{
-			if (active)
-				SetActive(false, true);
+			SetActive(false, true);
 			return;
 		}
 
+		// Read the hotkeys
+		// The mode key is only read while on, so the default O never also reaches
+		// Atmosphere Autopilot, which reads O while its fly-by-wire is on.
 		var settings = Settings.Instance;
-		var hotkeys = !MapView.MapIsEnabled && !InputLockManager.IsAllLocked(ControlTypes.KEYBOARDINPUT);
-		if (hotkeys && Input.GetKeyDown(settings.ToggleKey))
-			SetActive(!active, true);
-
-		if (hotkeys && Input.GetKeyDown(settings.ModeKey))
+		var canUseHotkeys = !MapView.MapIsEnabled && !InputLockManager.IsAllLocked(ControlTypes.KEYBOARDINPUT);
+		if (canUseHotkeys && Input.GetKeyDown(settings.ToggleKey))
+			SetActive(!isActive, true);
+		if (canUseHotkeys && isActive && Input.GetKeyDown(settings.ModeKey))
 		{
 			autopilot.Reset();
 			ScreenMessages.PostScreenMessage("Flight mode: " + FlightModes.Next().Name);
 		}
 
-		if (!active)
+		// Move the aim
+		if (!isActive)
 			return;
-
-		if (pilotOverride)
+		if (isPilotOverriding)
 			aim.Recentre(vessel);
 		else
 			aim.Follow(settings, FlightCamera.fetch.mainCamera.transform);
@@ -98,108 +217,35 @@ sealed class MouseAimPilot : MonoBehaviour
 
 	void LateUpdate()
 	{
+		// Sanity check
 		if (vessel == null)
 			return;
 
-		// After every Update, so SAS or Atmosphere Autopilot switched on this frame is off again before physics runs.
-		if (active)
+		// Switch SAS and Atmosphere Autopilot back off
+		// After every Update, so either one switched on this frame is off again before
+		// physics runs.
+		if (isActive)
 			lockout.Hold();
 
+		// Take the cursor back from KSP's own mouse look
+		// Its free look frees the cursor, so take it back whenever free look starts or
+		// ends.
 		if (MapView.MapIsEnabled || PauseMenu.isOpen)
 			return;
-
-		// KSP's own mouse look frees the cursor, so take it back whenever free look starts or ends.
-		if (aim.UpdateFreeLook() && active)
+		if (aim.UpdateFreeLook() && isActive)
 			LockCursor(true);
 	}
 
 	void OnGUI()
 	{
-		if (active && vessel != null && !MapView.MapIsEnabled)
+		// Sanity check
+		if (vessel == null || dynamics == null || MapView.MapIsEnabled)
+			return;
+
+		// Draw the markers and the tuning overlay
+		if (isActive)
 			Hud.Draw(vessel, aim.Aim, FlightCamera.fetch.mainCamera);
-	}
-
-	void SetActive(bool on, bool announce)
-	{
-		active = on && vessel != null;
-		LockCursor(active);
-		autopilot.Reset();
-		pilotOverride = false;
-
-		if (active)
-		{
-			aim.Recentre(vessel);
-			dynamics.Invalidate();
-			boost.Apply(vessel);
-			lockout.Engage(vessel);
-			if (announce)
-				ScreenMessages.PostScreenMessage("Mouse aim: " + FlightModes.Current.Name);
-		}
-		else
-		{
-			boost.Restore();
-			lockout.Release();
-			if (announce)
-				ScreenMessages.PostScreenMessage("Mouse aim: Off");
-		}
-	}
-
-	/// <summary>Moves mouse aim to another vessel, switching it off first. Null lets go of the current one.</summary>
-	void Bind(Vessel next)
-	{
-		if (active)
-			SetActive(false, next != null);
-		if (vessel != null)
-			vessel.OnPreAutopilotUpdate -= Fly;
-
-		vessel = next;
-		dynamics = vessel != null ? new VesselDynamics(vessel) : null;
-		// The earliest of the vessel's control callbacks, so autopilots on the later ones, like Atmosphere Autopilot
-		// flying together with mouse aim, take its output as their input whichever of them hooked in first.
-		if (vessel != null)
-			vessel.OnPreAutopilotUpdate += Fly;
-	}
-
-	void Fly(FlightCtrlState s)
-	{
-		if (!active || PauseMenu.isOpen || vessel != FlightGlobals.ActiveVessel)
-			return;
-
-		if (s.pitch != s.pitchTrim || s.yaw != s.yawTrim)
-		{
-			pilotOverride = true;
-			autopilot.Reset();
-			return;
-		}
-		pilotOverride = false;
-
-		var dt = TimeWarp.fixedDeltaTime;
-		dynamics.Update(dt);
-		if (!dynamics.Valid)
-			return;
-
-		autopilot.Drive(dynamics, aim.Aim, FlightModes.Current, dt, out var pitch, out var yaw, out var roll);
-
-		s.pitch = pitch;
-		s.yaw = yaw;
-		if (s.roll == s.rollTrim)
-			s.roll = roll;
-
-		autopilot.Applied(s.pitch, s.yaw, s.roll);
-	}
-
-	void OnVesselModified(Vessel modified)
-	{
-		if (!active || modified != vessel)
-			return;
-
-		boost.Refresh();
-		dynamics.Invalidate();
-	}
-
-	static void LockCursor(bool locked)
-	{
-		Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
-		Cursor.visible = !locked;
+		if (Settings.Instance.ShouldShowTuningOverlay)
+			tuning.Draw(isActive, FlightModes.Current, dynamics, autopilot, vessel);
 	}
 }

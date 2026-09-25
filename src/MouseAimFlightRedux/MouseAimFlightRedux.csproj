@@ -18,6 +18,8 @@
 		<RootNamespace>MouseAimFlightRedux</RootNamespace>
 		<Version>1.2.0</Version>
 		<LangVersion>12.0</LangVersion>
+		<Nullable>enable</Nullable>
+		<WarningsAsErrors>nullable</WarningsAsErrors>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	</PropertyGroup>
 

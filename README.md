@@ -18,8 +18,8 @@ Fly planes with your mouse. Point where you want to go, and Mouse Aim Flight Red
 
 It reads your craft's torque and inertia, so it adapts to whatever you build. It turns hard without overshooting, stays within G and angle of attack limits, and never needs trimming.
 
-* **P** turns mouse aim on and off.
-* **O** switches flight mode: Normal, Aggressive, Unlimited or Cruise. Each game starts in Normal.
+* **Y** turns mouse aim on and off.
+* **O** switches flight mode while mouse aim is on: Normal, Aggressive, Unlimited or Cruise. Each game starts in Normal.
 * The toolbar button opens the settings: hotkeys, sensitivity, axis inversion and the on-screen markers.
 
 Mouse Aim Flight Redux continues the original Mouse Aim Flight by tetryds and ferram4. It is an independent project, not endorsed by them.
@@ -38,7 +38,7 @@ SAS and [Atmosphere Autopilot](https://github.com/Boris-Barboris/AtmosphereAutop
 
 ## Tuning
 
-Flight modes live in `GameData/MouseAimFlightRedux/FlightModes.cfg`. Edit them, then press "Reload flight modes from disk" in the settings window to try your changes without restarting. How it all works is in [DESIGN.md](https://github.com/aspctt/MouseAimFlightRedux/blob/main/docs/DESIGN.md).
+Flight modes live in `GameData/MouseAimFlightRedux/FlightModes.cfg`. Edit them, then press "Reload flight modes from disk" in the settings window to try your changes without restarting. Tick "Show Tuning Overlay" there to watch what the controller asks for and what the craft does, live. How it all works is in [DESIGN.md](https://github.com/aspctt/MouseAimFlightRedux/blob/main/docs/DESIGN.md).
 
 ## Licensing
 
