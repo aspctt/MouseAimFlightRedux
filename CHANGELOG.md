@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A Crosshair nose marker, outlined in black so it shows against sky and ground
+- A button to reset the settings to their defaults
+
+### Changed
+
+- Crosshair is the default nose marker. Existing players keep the one in their saved settings
+- Nose markers are half their old size, so they sit inside the aim ring
+
+### Fixed
+
+- Binding the mouse aim key in the settings could switch mouse aim on straight away
+
 ## [1.1.0] - 2026-09-25
 
 ### Added

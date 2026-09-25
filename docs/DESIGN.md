@@ -124,12 +124,12 @@ Saved to `GameData/MouseAimFlightRedux/PluginData/Settings.cfg`, which KSP doesn
 | `modeKey` | O | next flight mode |
 | `mouseSensitivity` | 1 | degrees per mouse step |
 | `invertX`, `invertY` | False | |
-| `reticle` | Cross | nose marker: Cross, Dot or None |
+| `reticle` | Crosshair | nose marker: Crosshair, Cross, Dot or None |
 | `reticleOpacity` | 1 | |
-| `reticleSize` | 0.75 | fraction of 1/32 of the screen width |
+| `reticleSize` | 0.75 | aim ring size, as a fraction of 1/32 of the screen width. The nose marker is half that |
 | `keepAtmosphereAutopilotOff` | True | see "Other autopilots", shown only with Atmosphere Autopilot installed |
 
-To bind a hotkey, click its button and press a key. Escape cancels.
+To bind a hotkey, click its button and press a key. Escape cancels. "Reset to defaults" asks once more, then puts every setting above back to its default. Flight modes are untouched.
 
 ## Control surface speed-up
 
@@ -149,7 +149,9 @@ Atmosphere Autopilot is optional and reached by reflection, through public membe
 
 ## Markers and icon
 
-Drawn into textures at startup from signed distance functions, antialiased over one pixel. No image files ship.
+Drawn into textures at startup from signed distance functions, antialiased over one pixel. No image files ship. Each mipmap is drawn from the shapes at its own size, so markers drawn small stay clean. The nose marker is drawn at half the aim ring's size, so it sits inside it.
+
+The Crosshair nose marker has a white centre dot and four arms with a gap between them. The outer half of each arm is a rounded rectangle of half see-through medium grey. The dot and those tips are outlined in black at 75% opacity, and the inner half of each arm is the same black, so it shows against bright sky and dark ground alike.
 
 ## Compatibility
 

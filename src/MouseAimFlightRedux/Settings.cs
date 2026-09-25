@@ -7,6 +7,7 @@ namespace MouseAimFlightRedux;
 
 public enum ReticleStyle
 {
+	Crosshair,
 	Cross,
 	Dot,
 	None,
@@ -33,7 +34,7 @@ public sealed class Settings
 	public float MouseSensitivity = 1f;
 	public bool InvertX;
 	public bool InvertY;
-	public ReticleStyle Reticle = ReticleStyle.Cross;
+	public ReticleStyle Reticle = ReticleStyle.Crosshair;
 	public float ReticleOpacity = 1f;
 	public float ReticleSize = 0.75f;
 	public bool KeepAtmosphereAutopilotOff = true;
@@ -64,6 +65,13 @@ public sealed class Settings
 		node.TryGetValue("reticleSize", ref settings.ReticleSize);
 		node.TryGetValue("keepAtmosphereAutopilotOff", ref settings.KeepAtmosphereAutopilotOff);
 		return settings;
+	}
+
+	/// <summary>Puts every setting back to its default and saves.</summary>
+	public static void ResetToDefaults()
+	{
+		instance = new Settings();
+		instance.Save();
 	}
 
 	public void Save()

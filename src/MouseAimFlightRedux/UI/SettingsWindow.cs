@@ -54,6 +54,13 @@ sealed class SettingsWindow : MonoBehaviour
 	KeyBinding binding;
 	bool markerListOpen;
 	GUIStyle markerRowStyle;
+	bool confirmingReset;
+
+	/// <summary>
+	/// The key that just ended a binding. Unity can hand a key press to the window a frame before the game sees it, so
+	/// the keyboard stays locked until the key is let go, or a new hotkey would fire straight away.
+	/// </summary>
+	KeyCode releasePending;
 
 	/// <summary>
 	/// A layout window grows to fit its contents but never shrinks back on its own, so it's cut down to size after the
@@ -80,6 +87,17 @@ sealed class SettingsWindow : MonoBehaviour
 		RemoveButton();
 		EndBinding();
 		Settings.Instance.Save();
+	}
+
+	void Update()
+	{
+		if (binding != KeyBinding.None || releasePending == KeyCode.None)
+			return;
+		if (Input.GetKey(releasePending) || Input.GetKeyDown(releasePending))
+			return;
+
+		releasePending = KeyCode.None;
+		InputLockManager.RemoveControlLock(BindingLockId);
 	}
 
 	void OnGUI()
@@ -121,9 +139,10 @@ sealed class SettingsWindow : MonoBehaviour
 
 		GUILayout.Space(10);
 
-		// Layout and the events after it must see the same controls, so a click only opens or closes the list from the
-		// next frame on.
+		// Layout and the events after it must see the same controls, so a click only opens or closes the list, or the
+		// reset question, from the next frame on.
 		var listOpen = markerListOpen;
+		var confirming = confirmingReset;
 		GUILayout.BeginHorizontal();
 		if (GUILayout.Button("Nose marker: " + settings.Reticle, GUILayout.Width(180)))
 			SetMarkerListOpen(!markerListOpen);
@@ -154,6 +173,25 @@ sealed class SettingsWindow : MonoBehaviour
 		if (AtmosphereAutopilot.Available)
 			settings.KeepAtmosphereAutopilotOff = GUILayout.Toggle(settings.KeepAtmosphereAutopilotOff, "Keep Atmosphere Autopilot Off");
 
+		GUILayout.Space(10);
+
+		// Asks once more first, since there's no undo.
+		if (!confirming)
+		{
+			if (GUILayout.Button("Reset to defaults"))
+				confirmingReset = true;
+		}
+		else
+		{
+			GUILayout.BeginHorizontal();
+			GUILayout.Label("Reset every setting?");
+			if (GUILayout.Button("Yes", GUILayout.Width(50)))
+				ResetToDefaults();
+			if (GUILayout.Button("No", GUILayout.Width(50)))
+				confirmingReset = false;
+			GUILayout.EndHorizontal();
+		}
+
 		GUILayout.EndVertical();
 
 		GUI.DragWindow();
@@ -181,6 +219,14 @@ sealed class SettingsWindow : MonoBehaviour
 		}
 	}
 
+	void ResetToDefaults()
+	{
+		EndBinding();
+		SetMarkerListOpen(false);
+		confirmingReset = false;
+		Settings.ResetToDefaults();
+	}
+
 	void SetMarkerListOpen(bool open)
 	{
 		if (markerListOpen && !open)
@@ -205,6 +251,7 @@ sealed class SettingsWindow : MonoBehaviour
 	void BeginBinding(KeyBinding which)
 	{
 		binding = which;
+		releasePending = KeyCode.None;
 		// Keep the key being bound from also flying the vessel or firing a hotkey.
 		InputLockManager.SetControlLock(ControlTypes.KEYBOARDINPUT, BindingLockId);
 	}
@@ -212,6 +259,7 @@ sealed class SettingsWindow : MonoBehaviour
 	void EndBinding()
 	{
 		binding = KeyBinding.None;
+		releasePending = KeyCode.None;
 		InputLockManager.RemoveControlLock(BindingLockId);
 	}
 
@@ -231,8 +279,10 @@ sealed class SettingsWindow : MonoBehaviour
 			settings.Save();
 		}
 
+		// The lock stays on until Update sees the key let go.
+		releasePending = current.keyCode;
+		binding = KeyBinding.None;
 		current.Use();
-		EndBinding();
 	}
 
 	void AddButton()
@@ -271,6 +321,7 @@ sealed class SettingsWindow : MonoBehaviour
 		visible = false;
 		EndBinding();
 		SetMarkerListOpen(false);
+		confirmingReset = false;
 		Settings.Instance.Save();
 	}
 }

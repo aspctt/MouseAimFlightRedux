@@ -31,6 +31,9 @@ namespace MouseAimFlightRedux.UI;
 /// <summary>The markers drawn over the flight view: a ring at the aim, and the chosen marker at the nose.</summary>
 static class Hud
 {
+	/// <summary>The nose marker's size against the aim ring's, so it fits inside the ring.</summary>
+	const float NoseScale = 0.5f;
+
 	/// <summary>Call from OnGUI. Positions are taken at repaint, after the camera has moved for the frame.</summary>
 	public static void Draw(Vessel vessel, Vector3 aim, Camera camera)
 	{
@@ -49,7 +52,7 @@ static class Hud
 
 		var nose = Reticles.Nose(settings.Reticle);
 		if (nose != null)
-			DrawAt(camera.WorldToScreenPoint(centre + vessel.ReferenceTransform.up * AimTracker.Distance), size, nose);
+			DrawAt(camera.WorldToScreenPoint(centre + vessel.ReferenceTransform.up * AimTracker.Distance), size * NoseScale, nose);
 
 		GUI.color = oldColor;
 	}
