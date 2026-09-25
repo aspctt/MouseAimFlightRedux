@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-25
+
 ### Added
 
 - SAS and Atmosphere Autopilot are kept off while mouse aim is on, and switched back on afterwards if they were on
@@ -60,5 +62,6 @@ First release. Mouse Aim Flight Redux continues Mouse Aim Flight 1.1.3 by tetryd
 - The toolbar button and its listeners were never cleaned up when leaving flight
 - Control surfaces docked or decoupled while mouse aim was on kept the wrong speed until the craft was reloaded
 
-[Unreleased]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.0.0...HEAD
+[Unreleased]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.1.0...HEAD
+[1.1.0]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.0.0...1.1.0
 [1.0.0]: https://github.com/aspctt/MouseAimFlightRedux/releases/tag/1.0.0
