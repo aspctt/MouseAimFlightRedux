@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-09-25
+
 ### Added
 
 - Terrain avoidance, switched on in the settings: just before you'd fly into the ground or a mountain, it levels the wings, pulls up and shows PULL UP, then hands back. It stays out of the way with the gear down
@@ -101,7 +103,8 @@ First release. Mouse Aim Flight Redux continues Mouse Aim Flight 1.1.3 by tetryd
 - The toolbar button and its listeners were never cleaned up when leaving flight
 - Control surfaces docked or decoupled while mouse aim was on kept the wrong speed until the craft was reloaded
 
-[Unreleased]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.3.0...HEAD
+[Unreleased]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.4.0...HEAD
+[1.4.0]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.3.0...1.4.0
 [1.3.0]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.2.0...1.3.0
 [1.2.0]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.1.0...1.2.0
 [1.1.0]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.0.0...1.1.0
