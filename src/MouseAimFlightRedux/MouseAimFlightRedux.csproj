@@ -16,7 +16,7 @@
 		<TargetFramework>net472</TargetFramework>
 		<AssemblyName>MouseAimFlightRedux</AssemblyName>
 		<RootNamespace>MouseAimFlightRedux</RootNamespace>
-		<Version>1.2.0</Version>
+		<Version>1.3.0</Version>
 		<LangVersion>12.0</LangVersion>
 		<Nullable>enable</Nullable>
 		<WarningsAsErrors>nullable</WarningsAsErrors>
