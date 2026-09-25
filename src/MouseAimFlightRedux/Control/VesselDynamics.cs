@@ -7,10 +7,10 @@ using UnityEngine;
 namespace MouseAimFlightRedux.Control;
 
 /// <summary>
-/// What the controller needs to know about a vessel, measured in its reference frame. See
-/// docs/DESIGN.md, "Frames and conventions" and "Authority".
+/// Measures a KSP vessel for the controller. The members it reads are described on
+/// <see cref="IVesselDynamics"/>.
 /// </summary>
-public sealed class VesselDynamics
+public sealed class VesselDynamics : IVesselDynamics
 {
 	//// Constants
 
@@ -50,52 +50,24 @@ public sealed class VesselDynamics
 	public Vector3 Nose { get; private set; }
 	public Vector3 Canopy { get; private set; }
 	public Vector3 Right { get; private set; }
-
-	/// <summary>Away from the centre of the body being orbited.</summary>
 	public Vector3 Up { get; private set; }
 
-	/// <summary>Nose up positive, rad/s.</summary>
 	public float PitchRate { get; private set; }
-
-	/// <summary>Nose right positive, rad/s.</summary>
 	public float YawRate { get; private set; }
-
-	/// <summary>Right wing down positive, rad/s.</summary>
 	public float RollRate { get; private set; }
 
-	/// <summary>
-	/// Angular acceleration a full input produces on each axis, rad/s².
-	/// </summary>
 	public float PitchAuthority { get; private set; }
-
 	public float YawAuthority { get; private set; }
 	public float RollAuthority { get; private set; }
 
-	/// <summary>
-	/// How fast the slowest fixed-speed controls move, in full inputs per second, or
-	/// infinity if there are none. Stock surfaces ease into position instead; Atmosphere
-	/// Autopilot's move at a fixed speed.
-	/// </summary>
 	public float SlewSpeed { get; private set; } = float.PositiveInfinity;
-
-	/// <summary>
-	/// Share of each axis's torque that comes from fixed-speed controls, 0 to 1.
-	/// </summary>
 	public float PitchSlewShare { get; private set; }
-
 	public float YawSlewShare { get; private set; }
 	public float RollSlewShare { get; private set; }
 
-	/// <summary>kPa.</summary>
 	public float DynamicPressure { get; private set; }
-
-	/// <summary>Surface speed, m/s.</summary>
 	public float Airspeed { get; private set; }
-
-	/// <summary>Nose above the flight path positive, rad.</summary>
 	public float AngleOfAttack { get; private set; }
-
-	/// <summary>Flight path right of the nose positive, rad.</summary>
 	public float Sideslip { get; private set; }
 
 	//// Private Functions

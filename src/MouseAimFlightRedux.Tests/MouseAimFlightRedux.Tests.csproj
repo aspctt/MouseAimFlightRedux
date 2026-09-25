@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!--
+		Flies the controller against a simulated aircraft, outside KSP. At run time only
+		Unity's core module is loaded, for its vector maths. Anything that reaches into KSP
+		itself fails to load, which keeps the tests from quietly depending on the game.
+
+		KSPRoot is read from the plugin's MouseAimFlightRedux.csproj.user, or from an
+		environment variable, the same as for the plugin.
+	-->
+
+	<Import Project="..\MouseAimFlightRedux\MouseAimFlightRedux.csproj.user" Condition="Exists('..\MouseAimFlightRedux\MouseAimFlightRedux.csproj.user')" />
+
+	<PropertyGroup>
+		<TargetFramework>net472</TargetFramework>
+		<RootNamespace>MouseAimFlightRedux.Tests</RootNamespace>
+		<LangVersion>12.0</LangVersion>
+		<Nullable>enable</Nullable>
+		<WarningsAsErrors>nullable</WarningsAsErrors>
+		<IsPackable>false</IsPackable>
+		<IsTestProject>true</IsTestProject>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+		<PackageReference Include="NUnit" Version="4.6.1" />
+		<PackageReference Include="NUnit3TestAdapter" Version="6.3.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\MouseAimFlightRedux\MouseAimFlightRedux.csproj" />
+		<Reference Include="UnityEngine.CoreModule" HintPath="$(KSPRoot)\KSP_x64_Data\Managed\UnityEngine.CoreModule.dll" />
+	</ItemGroup>
+
+	<!-- The shipped flight modes, flown by the tests as players get them. -->
+	<ItemGroup>
+		<None Include="..\..\GameData\MouseAimFlightRedux\FlightModes.cfg" Link="FlightModes.cfg" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+</Project>

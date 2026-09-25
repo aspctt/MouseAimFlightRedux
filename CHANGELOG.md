@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Supports every KSP 1.12 release, not just 1.12.5
 - Mouse aim now turns on and off with Y instead of P, which Atmosphere Autopilot uses. Saved settings still on P move to Y once
 - O only switches flight mode while mouse aim is on, so it no longer also toggles Atmosphere Autopilot's moderation
+- Turns with less than 90° of bank yaw with the flight path, so they're coordinated instead of skidding
+
+### Fixed
+
+- Hard pulls no longer run a few degrees past the angle of attack limit and pulse
+- Pointing straight up or down no longer rocks the wings from side to side
+- Cruise stays within its 45° bank limit, and turns round level instead of climbing steeply and getting stuck
 
 ## [1.2.0] - 2026-09-25
 

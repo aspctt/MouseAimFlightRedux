@@ -39,11 +39,46 @@ public sealed class Autopilot
 	/// </summary>
 	const float SIDESLIP_GAIN = 0.5f;
 
+	/// <summary>
+	/// Time constant of the low-pass filter on the measured rates of change of angle of
+	/// attack and sideslip, s.
+	/// </summary>
+	const float AIRFLOW_RATE_FILTER_TIME = 0.1f;
+
+	/// <summary>
+	/// Where wings level starts to fade out and where it's gone, as the sine of the
+	/// nose's angle from straight up or down: 30° and about 10°.
+	/// </summary>
+	const float LEVEL_FADE_START = 0.5f;
+
+	const float LEVEL_FADE_END = 0.17f;
+
+	/// <summary>
+	/// How far past the bank limit the bank toward the aim has to be before a turn seeks
+	/// the aim's height outright, degrees.
+	/// </summary>
+	const float HEIGHT_SEEKING_BLEND = 15f;
+
+	/// <summary>
+	/// Floor on the cosine of the bank when turning a difference in height into pitch.
+	/// </summary>
+	const float MINIMUM_BANK_COSINE = 0.25f;
+
 	//// References and State
 
 	readonly AxisController pitch = new();
 	readonly AxisController yaw = new();
 	readonly AxisController roll = new();
+	bool isAirflowPrimed;
+	float lastAngleOfAttack;
+	float lastSideslip;
+
+	/// <summary>
+	/// Rates of change of angle of attack and sideslip after the filter, rad/s.
+	/// </summary>
+	float angleOfAttackRate;
+
+	float sideslipRate;
 
 	/// <summary>
 	/// How far aircraft behaviour had faded in on the last step, 0 to 1.
@@ -81,6 +116,9 @@ public sealed class Autopilot
 		pitch.Reset();
 		yaw.Reset();
 		roll.Reset();
+		isAirflowPrimed = false;
+		angleOfAttackRate = 0f;
+		sideslipRate = 0f;
 	}
 
 	/// <summary>
@@ -97,7 +135,7 @@ public sealed class Autopilot
 	/// Inputs follow FlightCtrlState: positive pitch is nose up, positive yaw is nose
 	/// right, positive roll is right wing down.
 	/// </summary>
-	public void Drive(VesselDynamics vessel, Vector3 aimDirection, FlightMode mode, float deltaTime, out float pitchInput, out float yawInput, out float rollInput)
+	public void Drive(IVesselDynamics vessel, Vector3 aimDirection, FlightMode mode, float deltaTime, out float pitchInput, out float yawInput, out float rollInput)
 	{
 		// Measure the aim against the nose
 		var aim = aimDirection.normalized;
@@ -107,6 +145,7 @@ public sealed class Autopilot
 		var pitchError = Mathf.Atan2(above, along);
 		var yawError = Mathf.Atan2(right, along);
 		var offNose = Mathf.Acos(Mathf.Clamp(along, -1f, 1f));
+		var heightError = Mathf.Asin(Mathf.Clamp(Vector3.Dot(aim, vessel.Up), -1f, 1f)) - Mathf.Asin(Mathf.Clamp(Vector3.Dot(vessel.Nose, vessel.Up), -1f, 1f));
 
 		// Fade in aircraft behaviour and the commitment to bank
 		var aerodynamicBlend = SmoothStep(AERODYNAMIC_BLEND_START, AERODYNAMIC_BLEND_FULL, vessel.DynamicPressure);
@@ -114,21 +153,43 @@ public sealed class Autopilot
 		AerodynamicBlend = aerodynamicBlend;
 		BankCommitment = bankCommitment;
 
+		// Find which way is up across the nose
+		// Wings level means nothing with the nose straight up or down, where the
+		// slightest movement swings it round, so it fades out there. Chasing it rocked
+		// the wings from side to side at full roll.
+		var levelAround = new Vector2(Vector3.Dot(vessel.Up, vessel.Right), Vector3.Dot(vessel.Up, vessel.Canopy));
+		var levelWeight = SmoothStep(LEVEL_FADE_END, LEVEL_FADE_START, levelAround.magnitude);
+
 		// Bank toward the aim or wings level
 		// Blended as directions in the plane across the nose, so the blend never wraps
-		// through ±180°.
+		// through ±180°. Where wings level has faded, roll holds still.
 		var aimAround = new Vector2(right, above);
-		var levelAround = new Vector2(Vector3.Dot(vessel.Up, vessel.Right), Vector3.Dot(vessel.Up, vessel.Canopy));
-		var wantedDirection = bankCommitment * Normalized(aimAround) + (1f - bankCommitment) * Normalized(levelAround);
+		var wantedDirection = bankCommitment * Normalized(aimAround) + (1f - bankCommitment) * levelWeight * Normalized(levelAround);
 		var bankError = wantedDirection.sqrMagnitude > 1e-6f ? Mathf.Atan2(wantedDirection.x, wantedDirection.y) : 0f;
+		var rollStrength = bankCommitment + (1f - bankCommitment) * levelWeight;
 
 		// Hold the bank within its limit
+		// Past the limit the aim can't be put overhead, and pulling at it anyway climbs
+		// or dives as much as it turns. So the further past the limit the bank toward the
+		// aim would go, the more the turn seeks the aim's height instead, banked toward
+		// its side. Pulling at it had Cruise climb steeply turning round, then stick with
+		// the aim below the nose.
+		var bank = 0f;
+		var heightSeeking = 0f;
 		if (mode.MaximumBank < 180f && levelAround.sqrMagnitude > 1e-4f)
 		{
-			var bank = Mathf.Atan2(-levelAround.x, levelAround.y);
+			// Find how far past the limit the bank would go
+			bank = Mathf.Atan2(-levelAround.x, levelAround.y);
 			var bankLimit = mode.MaximumBank * Mathf.Deg2Rad;
-			var targetBank = Mathf.Clamp(WrapAngle(bank + bankError), -bankLimit, bankLimit);
-			bankError = targetBank - bank;
+			var wantedBank = WrapAngle(bank + bankError);
+			heightSeeking = levelWeight * SmoothStep(0f, HEIGHT_SEEKING_BLEND, (Mathf.Abs(wantedBank) - bankLimit) * Mathf.Rad2Deg);
+
+			// Bank toward the aim, or toward its side once seeking its height
+			var levelRight = new Vector2(levelAround.y, -levelAround.x).normalized;
+			var aside = Mathf.Atan2(Vector2.Dot(aimAround, levelRight), along);
+			var sideBank = bankLimit * Mathf.Clamp(aside / (mode.BankBlendEnd * Mathf.Deg2Rad), -1f, 1f);
+			var targetBank = Mathf.Lerp(Mathf.Clamp(wantedBank, -bankLimit, bankLimit), sideBank, heightSeeking);
+			bankError = Mathf.Lerp(bankError, targetBank - bank, levelWeight);
 		}
 
 		// Pull toward the aim
@@ -136,17 +197,47 @@ public sealed class Autopilot
 		// well the bank has put the aim overhead. Never push while rolling toward it.
 		var aimRollAngle = Mathf.Atan2(right, above);
 		var pull = offNose * Mathf.Max(0f, Mathf.Cos(aimRollAngle));
-		var aerodynamicPitch = Mathf.Lerp(pitchError, pull, bankCommitment);
+
+		// Or seek the aim's height
+		// Pitch moves the nose up by the cosine of the bank, so the difference in height
+		// is scaled up by it, keeping its sign past 90°.
+		var bankCosine = Mathf.Cos(bank);
+		var heightPull = heightError / (Mathf.Sign(bankCosine) * Mathf.Max(Mathf.Abs(bankCosine), MINIMUM_BANK_COSINE));
+		var aerodynamicPitch = Mathf.Lerp(pitchError, Mathf.Lerp(pull, heightPull, heightSeeking), bankCommitment);
+
+		// Measure how fast the airflow is changing
+		// The flight path turns at the nose's rate plus the rate the airflow moves across
+		// it: pitch rate less the change in angle of attack, yaw rate plus the change in
+		// sideslip.
+		var angleOfAttack = vessel.AngleOfAttack;
+		var sideslip = vessel.Sideslip;
+		if (!isAirflowPrimed)
+		{
+			lastAngleOfAttack = angleOfAttack;
+			lastSideslip = sideslip;
+			isAirflowPrimed = true;
+		}
+		if (deltaTime > 0f)
+		{
+			var filter = 1f - Mathf.Exp(-deltaTime / AIRFLOW_RATE_FILTER_TIME);
+			angleOfAttackRate += (WrapAngle(angleOfAttack - lastAngleOfAttack) / deltaTime - angleOfAttackRate) * filter;
+			sideslipRate += (WrapAngle(sideslip - lastSideslip) / deltaTime - sideslipRate) * filter;
+		}
+		lastAngleOfAttack = angleOfAttack;
+		lastSideslip = sideslip;
 
 		// Trim with yaw
 		// Yaw trims the last few degrees, fading out as the bank takes over, and keeps
-		// the turn coordinated.
-		var aerodynamicYaw = (1f - bankCommitment) * yawError + SIDESLIP_GAIN * vessel.Sideslip;
+		// the turn coordinated. Once committed to the bank it follows the flight path's
+		// own yaw rate: a turn short of 90° of bank needs the nose to yaw as well as
+		// pitch, and holding yaw to what the sideslip alone asked for skidded it.
+		var aerodynamicYaw = (1f - bankCommitment) * yawError + SIDESLIP_GAIN * sideslip;
+		var yawTargetRate = aerodynamicBlend * bankCommitment * (vessel.YawRate + sideslipRate);
 
 		// Blend the commands by how aircraft-like the flight is
 		var pitchCommand = Mathf.Lerp(pitchError, aerodynamicPitch, aerodynamicBlend);
 		var yawCommand = Mathf.Lerp(yawError, aerodynamicYaw, aerodynamicBlend);
-		var rollCommand = aerodynamicBlend * bankError;
+		var rollCommand = aerodynamicBlend * rollStrength * bankError;
 
 		// Limit the pitch rate by the mode
 		var maximumPitch = mode.MaximumPitchRate * Mathf.Deg2Rad;
@@ -157,16 +248,21 @@ public sealed class Autopilot
 
 		// Limit it further by load factor and angle of attack
 		// In a turn the flight path rotates at n·g/V, and a maximum load factor of zero
-		// or less means no limit. Near the angle of attack limit, allow the current pitch
-		// rate plus whatever closes the remaining margin, so a turn held at the limit
-		// keeps turning and one past it backs off.
+		// or less means no limit. The angle of attack only grows while the nose turns
+		// faster than the flight path, so near its limit allow the flight path's turn
+		// rate plus whatever closes the remaining margin, looking ahead by the time a
+		// change of pitch rate takes. A turn held at the limit keeps turning, and one
+		// past it backs off. Allowing the nose's own rate instead ran 3 to 6° past the
+		// limit and pulsed.
 		if (aerodynamicBlend > 0f)
 		{
 			var loadFactorRate = mode.MaximumLoadFactor > 0f ? mode.MaximumLoadFactor * GRAVITY / Mathf.Max(vessel.Airspeed, 1f) : float.PositiveInfinity;
-			var upMargin = mode.MaximumAngleOfAttack * Mathf.Deg2Rad - vessel.AngleOfAttack;
-			var downMargin = mode.MaximumNegativeAngleOfAttack * Mathf.Deg2Rad + vessel.AngleOfAttack;
-			var angleOfAttackUp = vessel.PitchRate + upMargin / mode.AttitudeResponse;
-			var angleOfAttackDown = vessel.PitchRate - downMargin / mode.AttitudeResponse;
+			var flightPathRate = vessel.PitchRate - angleOfAttackRate;
+			var comingAngleOfAttack = angleOfAttack + angleOfAttackRate * (mode.RateResponse + mode.ControlLag);
+			var upMargin = mode.MaximumAngleOfAttack * Mathf.Deg2Rad - comingAngleOfAttack;
+			var downMargin = mode.MaximumNegativeAngleOfAttack * Mathf.Deg2Rad + comingAngleOfAttack;
+			var angleOfAttackUp = flightPathRate + upMargin / mode.AttitudeResponse;
+			var angleOfAttackDown = flightPathRate - downMargin / mode.AttitudeResponse;
 
 			var pullLimit = Mathf.Min(loadFactorRate, angleOfAttackUp);
 			var pushLimit = Mathf.Max(-0.5f * loadFactorRate, angleOfAttackDown);
@@ -182,8 +278,8 @@ public sealed class Autopilot
 		// Step each axis
 		var maximumYaw = mode.MaximumYawRate * Mathf.Deg2Rad;
 		var maximumRoll = mode.MaximumRollRate * Mathf.Deg2Rad;
-		pitchInput = pitch.Step(pitchCommand, vessel.PitchRate, pitchDown, pitchUp, vessel.PitchAuthority, vessel.PitchSlewShare, vessel.SlewSpeed, mode, deltaTime);
-		yawInput = yaw.Step(yawCommand, vessel.YawRate, -maximumYaw, maximumYaw, vessel.YawAuthority, vessel.YawSlewShare, vessel.SlewSpeed, mode, deltaTime);
-		rollInput = roll.Step(rollCommand, vessel.RollRate, -maximumRoll, maximumRoll, vessel.RollAuthority, vessel.RollSlewShare, vessel.SlewSpeed, mode, deltaTime);
+		pitchInput = pitch.Step(pitchCommand, 0f, vessel.PitchRate, pitchDown, pitchUp, vessel.PitchAuthority, vessel.PitchSlewShare, vessel.SlewSpeed, mode, deltaTime);
+		yawInput = yaw.Step(yawCommand, yawTargetRate, vessel.YawRate, -maximumYaw, maximumYaw, vessel.YawAuthority, vessel.YawSlewShare, vessel.SlewSpeed, mode, deltaTime);
+		rollInput = roll.Step(rollCommand, 0f, vessel.RollRate, -maximumRoll, maximumRoll, vessel.RollAuthority, vessel.RollSlewShare, vessel.SlewSpeed, mode, deltaTime);
 	}
 }

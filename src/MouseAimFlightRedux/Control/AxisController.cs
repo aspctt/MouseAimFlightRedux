@@ -88,6 +88,8 @@ sealed class AxisController
 	public void Applied(float input) => lastInput = Mathf.Clamp(input, -1f, 1f);
 
 	/// <param name="error">Angle to close, rad.</param>
+	/// <param name="targetRate">How fast the target itself is moving on this axis,
+	/// rad/s. The rate asked for is this plus whatever closes the error.</param>
 	/// <param name="rate">Current rate on this axis, rad/s.</param>
 	/// <param name="minimumRate">Lowest rate the command may take, rad/s.</param>
 	/// <param name="maximumRate">Highest rate the command may take, rad/s.</param>
@@ -97,7 +99,7 @@ sealed class AxisController
 	/// speed, 0 to 1.</param>
 	/// <param name="slewSpeed">That fixed speed, full inputs per second.</param>
 	/// <returns>Input from -1 to 1.</returns>
-	public float Step(float error, float rate, float minimumRate, float maximumRate, float authority, float slewShare, float slewSpeed, FlightMode mode, float deltaTime)
+	public float Step(float error, float targetRate, float rate, float minimumRate, float maximumRate, float authority, float slewShare, float slewSpeed, FlightMode mode, float deltaTime)
 	{
 		// Sanity check
 		if (deltaTime <= 0f)
@@ -106,13 +108,14 @@ sealed class AxisController
 		// Turn the error into a rate
 		// The attitude loop works on the error that will be left once the rate loop and
 		// the controls have caught up with a change of command, so the rate comes off in
-		// time instead of after the target has been passed.
+		// time instead of after the target has been passed. A moving target is followed
+		// at its own rate, so holding onto it doesn't need a standing error.
 		var lead = mode.RateResponse + mode.ControlLag;
-		var ahead = error - rate * lead;
+		var ahead = error - (rate - targetRate) * lead;
 		var magnitude = Mathf.Abs(ahead);
 		var linear = magnitude / mode.AttitudeResponse;
 		var braking = Mathf.Sqrt(2f * mode.BrakingShare * authority * magnitude);
-		var rateCommand = Mathf.Sign(ahead) * Mathf.Min(linear, braking);
+		var rateCommand = targetRate + Mathf.Sign(ahead) * Mathf.Min(linear, braking);
 
 		// Hold the rate within the limits
 		// Limits can cross, an angle of attack limit against a load limit say. Split the

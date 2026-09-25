@@ -62,8 +62,9 @@ Three stages, each axis on its own.
 Turns the aim into an angle error per axis.
 
 - **Pitch:** the aim's angle above the nose. Once banking toward the aim, it pulls by the whole angle off the nose, scaled by how well the bank has put the aim overhead, and never pushes while rolling.
-- **Roll:** wings level below `bankBlendStart` degrees off the nose, fully banked toward the aim above `bankBlendEnd`, blended as directions in between so nothing wraps at ±180°. Limited to `maxBank`.
-- **Yaw:** trims the last few degrees, fading as the bank takes over, plus a sideslip term to keep turns coordinated.
+- **Roll:** wings level below `bankBlendStart` degrees off the nose, fully banked toward the aim above `bankBlendEnd`, blended as directions in between so nothing wraps at ±180°. Wings level fades out between 30° and 10° from straight up or down, where it means nothing, and roll holds still there instead.
+- **Bank limit:** `maxBank` caps the bank. When the aim would need more, pulling at it climbs or dives as much as it turns, so the turn seeks the aim's height instead: banked toward its side, with pitch working on the difference in height over the cosine of the bank. It blends in over the first 15° past the limit.
+- **Yaw:** trims the last few degrees, fading as the bank takes over, plus a sideslip term to keep turns coordinated. Once committed to the bank it also follows the flight path's yaw rate, the yaw rate plus the change in sideslip. A turn short of 90° of bank needs the nose to yaw as well as pitch, and without it the turn skids.
 
 All of this fades in between 0.3 and 1.5 kPa of dynamic pressure. Below that, as in space, pitch and yaw point straight at the aim, roll holds still, and the flight limits are off.
 
@@ -73,7 +74,9 @@ Turns angle error into a target rate.
 
 - **Lead:** it works on the error left once the controls catch up, `error - rate · (rateResponse + controlLag)`, so it eases off before the target rather than after.
 - **Rate:** the smaller of `error / attitudeResponse` and the braking curve `sqrt(2 · a · |error|)`, where `a` is `brakingShare` of the available angular acceleration. That's the fastest rate it can still stop from in time.
-- **Limits:** `maxPitchRate`, `maxYawRate` and `maxRollRate`. Pitch is also capped at `maxG · g / airspeed`, halved when pushing, unless `maxG` is 0. Near `maxAoA`, or `maxNegativeAoA` when pushing, pitch rate may only grow by what closes the remaining margin over `attitudeResponse`, so a turn held at the limit keeps turning.
+- **Moving target:** a target that moves, like the flight path yaw follows, adds its own rate, and the lead counts only the rate relative to it.
+- **Limits:** `maxPitchRate`, `maxYawRate` and `maxRollRate`. Pitch is also capped at `maxG · g / airspeed`, halved when pushing, unless `maxG` is 0.
+- **Angle of attack:** it only grows while the nose turns faster than the flight path. Near `maxAoA`, or `maxNegativeAoA` when pushing, pitch rate is capped at the flight path's rate, the pitch rate less the change in angle of attack, plus what closes the remaining margin over `attitudeResponse`. The margin is taken from where the angle of attack will be after `rateResponse + controlLag`. A turn held at the limit keeps turning, and one past it backs off. The changes in angle of attack and sideslip are measured each step and low-pass filtered over 0.1 s.
 
 ### Rate loop
 
@@ -172,6 +175,23 @@ Atmosphere Autopilot is optional and reached by reflection, through public membe
 Drawn into textures the first time they're needed, from signed distance functions, antialiased over one pixel. No image files ship. Each mipmap is drawn from the shapes at its own size, so markers drawn small stay clean. The nose marker is drawn at half the aim ring's size, so it sits inside it.
 
 The Crosshair nose marker has a white centre dot and four arms with a gap between them. The outer half of each arm is a rounded rectangle of half see-through medium grey. The dot and those tips are outlined in black at 75% opacity, and the inner half of each arm is the same black, so it shows against bright sky and dark ground alike.
+
+## Tests
+
+`src/MouseAimFlightRedux.Tests` flies the controller against a simulated aircraft, outside KSP, with NUnit:
+
+```
+dotnet test src/MouseAimFlightRedux.Tests
+```
+
+It needs `KSPRoot` like the plugin, for Unity's vector maths. Nothing from KSP itself loads. The controller reads a vessel through `IVesselDynamics`, which `VesselDynamics` measures in game and the simulator fills instead.
+
+- **Simulator:** a rigid airframe at a constant airspeed, stepped every 0.02 s. Each axis turns under its control surfaces, reaction wheels, stability and damping. Surfaces either ease into position or move at a fixed speed, like Atmosphere Autopilot's. Lift, side force and gravity turn the flight path. Lift is linear, with no stall.
+- **Airframes:** a light fighter, also flown at 100 and 250 m/s, a cargo plane, a slightly unstable fighter, one with Atmosphere Autopilot's surfaces, one whose authority is misjudged by double and by half, one with random errors on every measurement, and a probe in space.
+- **Modes:** read from the shipped FlightModes.cfg, so tuning is tested as players get it. An unknown key fails the load.
+- **Checks:** every mode settles on aims up to 150° off and straight up, then holds still. It holds level flight, keeps to its angle of attack, load and bank limits, points at the aim in space without rolling, levels out cleanly after the pilot lets go of roll, and turns with noisy measurements hardly more jittery than it holds level. The load limit caps how fast the flight path turns, so gravity can add up to 1 g on top of it.
+
+With `--logger "console;verbosity=detailed"`, each flight prints its settle time, angle of attack, G, bank and input activity, for comparing tuning changes.
 
 ## Compatibility
 
