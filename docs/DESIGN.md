@@ -31,7 +31,7 @@ One addon per flight scene runs mouse aim for the active vessel, since only that
 | `UI/TuningOverlay.cs` | The tuning overlay | |
 | `UI/Reticles.cs` | Marker and icon textures | |
 | `Settings.cs` | Player settings | |
-| `Control/` | The controller and flight modes | |
+| `Control/` | The controller, flight modes and terrain avoidance | |
 
 Switching vessels, pausing or going on EVA turns mouse aim off. Leaving flight turns it off quietly.
 
@@ -118,11 +118,24 @@ A mode is a set of limits and response times for the same controller, read from 
 
 Four modes ship, in this order: **Normal** for general flying, **Aggressive** for aerobatics and combat, **Unlimited**, with no load limit and the angle of attack limit at 30°, where stock wings make the most lift, and **Cruise** for gentle, level-seeking long flights.
 
+## Terrain avoidance
+
+Keeps the craft out of the ground at the last moment, like a fighter jet's automatic ground collision avoidance. Off by default, switched on in the settings. It stands down with the gear down, landed or splashed, and below 1.5 kPa, where there's no lift to count on.
+
+- **Prediction:** ten times a second, or every physics step once a recovery would clear by less than 60 m, it follows the recoveries it could fly if it took over now. First 0.3 s to take over and unload, then the roll that points the lift upward, then a pull that builds over the response times and pitch authority to the most the craft allows, then a climb for 5 s. Upright, the pull carries on while rolling. More than a quarter turn over, it fades first. The roll counts on the fastest the craft has been seen rolling, at least 60°/s. Speed trades with height, but lift is never assumed to grow as a dive speeds up, since airbrakes or drag may stop it. The path is checked against the ground every 0.25 s.
+- **Climbs:** 15°, 30°, 45° and 60°, gentlest first. Flat ground only needs the first, and a mountain face needs one steeper than its slope. Diving steeply, pulling through toward where the canopy faces is tried too.
+- **Limits:** recoveries fly by at least Normal's pitch rate, load and angle of attack limits and response times, or the mode's own where they're stronger. A gentle mode's limits would make every recovery start early.
+- **Taking over:** when even the best recovery would come within 20 m of the ground, it takes over and flies the gentlest climb that clears by 40 m, or the best if none does. The HUD shows PULL UP. The nose is aimed above the climb by however far it sits above the flight path, and never below the climb the path already has. Holding a pitch or yaw key still overrides it.
+- **Handing back:** once climbing, and once a dive toward the pilot's aim, from rolled right over, could itself be recovered with 40 m to spare. Aiming into the ground keeps it climbing until then, rather than letting it scrape along.
+- **The ground:** the body's height map through `CelestialBody.TerrainAltitude`, with the sea as the floor on bodies that have one. It always looks ahead, however high the craft is above the ground below. Buildings aren't included.
+- **What the craft can do:** learned while flying. Lift against angle of attack, per unit of dynamic pressure, is fitted with a straight line over about 5 s, so it holds at any speed and copes with wings set at an angle. Pitch input against angle of attack, taken only while the angle holds steady, shows where the elevator runs out on a craft that can't reach the mode's limit. Until the wings have been seen working, a 2 g pull is assumed.
+
 ## Tuning overlay
 
 A window for tuning flight modes, switched on in the settings. It shows the last physics step the controller flew, and while mouse aim is off it keeps showing the last flight.
 
 - **Top:** mode, airspeed, dynamic pressure, angle of attack, sideslip and G, then how far aircraft behaviour has faded in and how far the bank has committed toward the aim.
+- **Terrain:** whether terrain avoidance is off, watching or pulling up, how close its predicted recovery comes to the ground, the pull it counts on and whether that's learned or assumed, the height above the ground next to KSP's radar altitude, and how long the predictions took.
 - **Per axis:** the angle error, the rate asked for against the rate flown, and the limits the request is held to. When it's held at one, what set it: Rate, G or AoA. Then the input as it reached the vessel, the authority, and the fixed-speed share.
 - **Graphs:** 5.6 seconds per axis of the rate asked for, the rate flown, the input and the limits. Rates are scaled to 1.25 times the mode's rate limit and inputs to full travel. Anything off the scale runs along the edge.
 
@@ -148,6 +161,7 @@ Saved to `GameData/MouseAimFlightRedux/PluginData/Settings.cfg`, which KSP doesn
 | `reticleOpacity` | 1 | |
 | `reticleSize` | 0.75 | aim ring size, as a fraction of 1/32 of the screen width. The nose marker is half that |
 | `keepAtmosphereAutopilotOff` | True | see "Other autopilots", shown only with Atmosphere Autopilot installed |
+| `avoidTerrain` | False | see "Terrain avoidance" |
 | `tuningOverlay` | False | shows the tuning overlay |
 
 To bind a hotkey, click its button and press a key. Escape cancels. "Reset to defaults" asks once more, then puts every setting above back to its default. Flight modes are untouched.
@@ -178,20 +192,21 @@ The Crosshair nose marker has a white centre dot and four arms with a gap betwee
 
 ## Tests
 
-`src/MouseAimFlightRedux.Tests` flies the controller against a simulated aircraft, outside KSP, with NUnit:
+`src/MouseAimFlightRedux.Tests` flies the controller and terrain avoidance against a simulated aircraft, outside KSP, with NUnit:
 
 ```
 dotnet test src/MouseAimFlightRedux.Tests
 ```
 
-It needs `KSPRoot` like the plugin, for Unity's vector maths. Nothing from KSP itself loads. The controller reads a vessel through `IVesselDynamics`, which `VesselDynamics` measures in game and the simulator fills instead.
+It needs `KSPRoot` like the plugin, for Unity's vector maths. Nothing from KSP itself loads. The controller reads a vessel through `IVesselDynamics`, which `VesselDynamics` measures in game and the simulator fills instead. Terrain avoidance reads the ground through `ITerrain`, which is the body's height map in game and flat ground with an optional ridge in the tests.
 
 - **Simulator:** a rigid airframe at a constant airspeed, stepped every 0.02 s. Each axis turns under its control surfaces, reaction wheels, stability and damping. Surfaces either ease into position or move at a fixed speed, like Atmosphere Autopilot's. Lift, side force and gravity turn the flight path. Lift is linear, with no stall.
-- **Airframes:** a light fighter, also flown at 100 and 250 m/s, a cargo plane, a slightly unstable fighter, one with Atmosphere Autopilot's surfaces, one whose authority is misjudged by double and by half, one with random errors on every measurement, and a probe in space.
+- **Airframes:** a light fighter, also flown at 100 and 250 m/s, a cargo plane, a slightly unstable fighter, one with Atmosphere Autopilot's surfaces, one whose authority is misjudged by double and by half, one with random errors on every measurement, one with its wings set at an angle, and a probe in space.
 - **Modes:** read from the shipped FlightModes.cfg, so tuning is tested as players get it. An unknown key fails the load.
 - **Checks:** every mode settles on aims up to 150° off and straight up, then holds still. It holds level flight, keeps to its angle of attack, load and bank limits, points at the aim in space without rolling, levels out cleanly after the pilot lets go of roll, and turns with noisy measurements hardly more jittery than it holds level. The load limit caps how fast the flight path turns, so gravity can add up to 1 g on top of it.
+- **Terrain checks:** every mode pulls out of 30° to 90° dives, climbs over a ridge and over 30° and 45° mountain faces, leaves low level flight alone, takes over in a low turn only when the same turn without it would have come close to the ground, stands down with the gear down, and learns the craft's pull to within 10%. Here the simulated craft trade speed with height, with thrust and drag bringing them back to cruise speed over 10 s.
 
-With `--logger "console;verbosity=detailed"`, each flight prints its settle time, angle of attack, G, bank and input activity, for comparing tuning changes.
+With `--logger "console;verbosity=detailed"`, each flight prints its settle time, angle of attack, G, bank and input activity, and each terrain flight its lowest height and takeovers, for comparing tuning changes.
 
 ## Compatibility
 

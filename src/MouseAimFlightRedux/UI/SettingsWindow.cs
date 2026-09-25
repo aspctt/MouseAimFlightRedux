@@ -137,6 +137,7 @@ sealed class SettingsWindow : MonoBehaviour
 		settings.ShouldInvertY = GUILayout.Toggle(settings.ShouldInvertY, "Invert Y Axis");
 		if (AtmosphereAutopilot.IsAvailable)
 			settings.ShouldKeepAtmosphereAutopilotOff = GUILayout.Toggle(settings.ShouldKeepAtmosphereAutopilotOff, "Keep Atmosphere Autopilot Off");
+		settings.ShouldAvoidTerrain = GUILayout.Toggle(settings.ShouldAvoidTerrain, "Avoid Terrain");
 		settings.ShouldShowTuningOverlay = GUILayout.Toggle(settings.ShouldShowTuningOverlay, "Show Tuning Overlay");
 		GUILayout.Space(10);
 

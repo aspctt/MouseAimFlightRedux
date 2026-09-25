@@ -34,6 +34,8 @@ public sealed class SimulatedAircraft : IVesselDynamics
 	Vector3 canopy;
 	Vector3 right;
 	Vector3 velocity;
+	Vector3 position;
+	float speed;
 	float pitchDeflection;
 	float yawDeflection;
 	float rollDeflection;
@@ -133,24 +135,34 @@ public sealed class SimulatedAircraft : IVesselDynamics
 	//// Public API
 
 	/// <summary>
-	/// Starts in level flight along z with the wings level, at the angle of attack that
-	/// holds 1 g, and with the controls centred.
+	/// Starts in level flight along z at the given height with the wings level, at the
+	/// angle of attack that holds 1 g, and with the controls centred.
 	/// </summary>
-	public SimulatedAircraft(Airframe airframe)
+	public SimulatedAircraft(Airframe airframe, float height)
 	{
 		// Find the angle of attack for level flight
 		this.airframe = airframe;
+		speed = airframe.Airspeed;
+		position = Vector3.up * height;
 		var liftPerRadian = airframe.LiftSlope * DynamicPressure;
-		var trim = liftPerRadian > 0f ? Mathf.Min(airframe.Gravity / liftPerRadian, 0.3f) : 0f;
+		var trim = liftPerRadian > 0f ? Mathf.Min(airframe.Gravity / liftPerRadian - airframe.WingIncidence * Mathf.Deg2Rad, 0.3f) : 0f;
 
 		// Pitch the nose up by it
 		nose = Vector3.forward * Mathf.Cos(trim) + Vector3.up * Mathf.Sin(trim);
 		canopy = Vector3.up * Mathf.Cos(trim) - Vector3.forward * Mathf.Sin(trim);
 		right = Vector3.right;
-		velocity = Vector3.forward * airframe.Airspeed;
+		velocity = Vector3.forward * speed;
 	}
 
 	public Airframe Airframe => airframe;
+
+	/// <summary>
+	/// Where the aircraft is, m, with the flat ground's datum at y = 0.
+	/// </summary>
+	public Vector3 Position => position;
+
+	public Vector3 Velocity => velocity;
+	public float Gravity => airframe.Gravity;
 
 	public Vector3 Nose => nose;
 	public Vector3 Canopy => canopy;
@@ -166,8 +178,8 @@ public sealed class SimulatedAircraft : IVesselDynamics
 	public float YawSlewShare => SlewShare(airframe.YawSurfaceAuthority);
 	public float RollSlewShare => SlewShare(airframe.RollSurfaceAuthority);
 
-	public float DynamicPressure => 0.5f * airframe.AirDensity * airframe.Airspeed * airframe.Airspeed / 1000f;
-	public float Airspeed => airframe.Airspeed;
+	public float DynamicPressure => 0.5f * airframe.AirDensity * speed * speed / 1000f;
+	public float Airspeed => speed;
 	public float AngleOfAttack => Mathf.Atan2(-Vector3.Dot(velocity, canopy), Vector3.Dot(velocity, nose));
 	public float Sideslip => Mathf.Atan2(Vector3.Dot(velocity, right), Vector3.Dot(velocity, nose));
 
@@ -216,11 +228,14 @@ public sealed class SimulatedAircraft : IVesselDynamics
 		// Lift works across the path toward the canopy side, side force against the
 		// sideslip, and the airspeed stays put.
 		var flightPath = velocity.normalized;
-		var lift = airframe.LiftSlope * dynamicPressure * angleOfAttack * Across(canopy, flightPath);
+		var lift = airframe.LiftSlope * dynamicPressure * (angleOfAttack + airframe.WingIncidence * Mathf.Deg2Rad) * Across(canopy, flightPath);
 		var sideForce = -airframe.SideForceSlope * dynamicPressure * sideslip * Across(right, flightPath);
 		var acceleration = lift + sideForce - airframe.Gravity * Up;
 		var turning = acceleration - Vector3.Dot(acceleration, flightPath) * flightPath;
-		velocity = (velocity + turning * deltaTime).normalized * airframe.Airspeed;
+		if (!float.IsPositiveInfinity(airframe.SpeedRecoveryTime))
+			speed = Mathf.Max(speed + (-airframe.Gravity * flightPath.y + (airframe.Airspeed - speed) / airframe.SpeedRecoveryTime) * deltaTime, 10f);
+		velocity = (velocity + turning * deltaTime).normalized * speed;
+		position += velocity * deltaTime;
 		LoadFactor = Vector3.Dot(lift + sideForce, canopy) / STANDARD_GRAVITY;
 
 		// Take the errors for the next measurements

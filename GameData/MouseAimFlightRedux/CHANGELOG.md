@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Terrain avoidance, switched on in the settings: just before you'd fly into the ground or a mountain, it levels the wings, pulls up and shows PULL UP, then hands back. It stays out of the way with the gear down
+
 ## [1.3.0] - 2026-09-25
 
 ### Added

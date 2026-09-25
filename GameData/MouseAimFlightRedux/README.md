@@ -20,7 +20,8 @@ It reads your craft's torque and inertia, so it adapts to whatever you build. It
 
 * **Y** turns mouse aim on and off.
 * **O** switches flight mode while mouse aim is on: Normal, Aggressive, Unlimited or Cruise. Each game starts in Normal.
-* The toolbar button opens the settings: hotkeys, sensitivity, axis inversion and the on-screen markers.
+* Terrain avoidance, switched on in the settings, pulls up at the last moment if you're about to fly into the ground or a mountain, then hands back. It stays out of the way with the gear down.
+* The toolbar button opens the settings: hotkeys, sensitivity, axis inversion, the on-screen markers and terrain avoidance.
 
 Mouse Aim Flight Redux continues the original Mouse Aim Flight by tetryds and ferram4. It is an independent project, not endorsed by them.
 

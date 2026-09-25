@@ -50,6 +50,8 @@ sealed class MouseAimPilot : MonoBehaviour
 
 	Vessel? vessel;
 	VesselDynamics? dynamics;
+	BodyTerrain? terrain;
+	TerrainAvoidance? avoidance;
 	bool isActive;
 
 	/// <summary>
@@ -91,6 +93,7 @@ sealed class MouseAimPilot : MonoBehaviour
 		// Turn on
 		aim.Recentre(vessel);
 		dynamics?.Invalidate();
+		avoidance?.Reset();
 		tuning.Clear();
 		boost.Apply(vessel);
 		lockout.Engage(vessel);
@@ -115,6 +118,8 @@ sealed class MouseAimPilot : MonoBehaviour
 		// mouse aim, take its output as their input whichever of them hooked in first.
 		vessel = next;
 		dynamics = next != null ? new VesselDynamics(next) : null;
+		terrain = next != null ? new BodyTerrain(next) : null;
+		avoidance = next != null ? new TerrainAvoidance() : null;
 		if (next != null)
 			next.OnPreAutopilotUpdate += OnPreAutopilotUpdate;
 	}
@@ -122,14 +127,15 @@ sealed class MouseAimPilot : MonoBehaviour
 	void OnPreAutopilotUpdate(FlightCtrlState state)
 	{
 		// Sanity check
-		if (!isActive || dynamics == null || PauseMenu.isOpen || vessel != FlightGlobals.ActiveVessel)
+		if (!isActive || dynamics == null || terrain == null || avoidance == null || vessel == null || PauseMenu.isOpen || vessel != FlightGlobals.ActiveVessel)
 			return;
 
-		// Let the pilot take over pitch and yaw
+		// Let the pilot take over pitch and yaw, even from a recovery
 		if (state.pitch != state.pitchTrim || state.yaw != state.yawTrim)
 		{
 			isPilotOverriding = true;
 			autopilot.Reset();
+			avoidance.Reset();
 			return;
 		}
 		isPilotOverriding = false;
@@ -140,8 +146,13 @@ sealed class MouseAimPilot : MonoBehaviour
 		if (!dynamics.IsValid)
 			return;
 
+		// Keep out of the ground, unless landing or landed
+		var mode = FlightModes.Current;
+		var isAvoidingTerrain = Settings.Instance.ShouldAvoidTerrain && !vessel.ActionGroups[KSPActionGroup.Gear] && !vessel.LandedOrSplashed;
+		var target = avoidance.Update(dynamics, terrain, aim.Aim, mode, autopilot.PitchInput, isAvoidingTerrain, deltaTime);
+
 		// Fly toward the aim, leaving roll to the pilot while they hold it
-		autopilot.Drive(dynamics, aim.Aim, FlightModes.Current, deltaTime, out var pitch, out var yaw, out var roll);
+		autopilot.Drive(dynamics, target, avoidance.FlownMode(mode), deltaTime, out var pitch, out var yaw, out var roll);
 		state.pitch = pitch;
 		state.yaw = yaw;
 		if (state.roll == state.rollTrim)
@@ -239,13 +250,13 @@ sealed class MouseAimPilot : MonoBehaviour
 	void OnGUI()
 	{
 		// Sanity check
-		if (vessel == null || dynamics == null || MapView.MapIsEnabled)
+		if (vessel == null || dynamics == null || avoidance == null || MapView.MapIsEnabled)
 			return;
 
 		// Draw the markers and the tuning overlay
 		if (isActive)
-			Hud.Draw(vessel, aim.Aim, FlightCamera.fetch.mainCamera);
+			Hud.Draw(vessel, aim.Aim, avoidance.IsRecovering, FlightCamera.fetch.mainCamera);
 		if (Settings.Instance.ShouldShowTuningOverlay)
-			tuning.Draw(isActive, FlightModes.Current, dynamics, autopilot, vessel);
+			tuning.Draw(isActive, FlightModes.Current, dynamics, autopilot, avoidance, vessel);
 	}
 }

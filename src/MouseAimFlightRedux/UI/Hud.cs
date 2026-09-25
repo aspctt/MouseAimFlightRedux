@@ -31,8 +31,8 @@ using UnityEngine;
 namespace MouseAimFlightRedux.UI;
 
 /// <summary>
-/// The markers drawn over the flight view: a ring at the aim, and the chosen marker at
-/// the nose.
+/// The markers drawn over the flight view: a ring at the aim, the chosen marker at the
+/// nose, and a warning while terrain avoidance pulls up.
 /// </summary>
 static class Hud
 {
@@ -42,6 +42,14 @@ static class Hud
 	/// The nose marker's size against the aim ring's, so it fits inside the ring.
 	/// </summary>
 	const float NOSE_SCALE = 0.5f;
+
+	const string WARNING_TEXT = "PULL UP";
+
+	static readonly Color WARNING_COLOR = new(1f, 0.69f, 0f);
+
+	//// References and State
+
+	static GUIStyle? warningStyle;
 
 	//// Private Functions
 
@@ -56,13 +64,37 @@ static class Hud
 		GUI.DrawTexture(new Rect(screenPoint.x - 0.5f * size, Screen.height - screenPoint.y - 0.5f * size, size, size), texture);
 	}
 
+	/// <summary>
+	/// The warning centred above a screen point, with a dark shadow so it reads against
+	/// bright sky.
+	/// </summary>
+	static void DrawWarningAbove(Vector3 screenPoint, float size, float opacity)
+	{
+		// Sanity check
+		if (screenPoint.z <= 0f)
+			return;
+
+		// Size the text to the screen
+		warningStyle ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+		warningStyle.fontSize = Mathf.RoundToInt(Screen.height / 28f);
+		var box = new Rect(screenPoint.x - 2f * size, Screen.height - screenPoint.y - 1.5f * size, 4f * size, size);
+
+		// Draw the shadow, then the text
+		var oldColor = GUI.color;
+		GUI.color = new Color(0f, 0f, 0f, 0.75f * opacity);
+		GUI.Label(new Rect(box.x + 2f, box.y + 2f, box.width, box.height), WARNING_TEXT, warningStyle);
+		GUI.color = new Color(WARNING_COLOR.r, WARNING_COLOR.g, WARNING_COLOR.b, opacity);
+		GUI.Label(box, WARNING_TEXT, warningStyle);
+		GUI.color = oldColor;
+	}
+
 	//// Public API
 
 	/// <summary>
 	/// Call from OnGUI. Positions are taken at repaint, after the camera has moved for
 	/// the frame.
 	/// </summary>
-	public static void Draw(Vessel vessel, Vector3 aim, Camera camera)
+	public static void Draw(Vessel vessel, Vector3 aim, bool isPullingUp, Camera camera)
 	{
 		// Sanity check
 		if (Event.current.type != EventType.Repaint)
@@ -79,10 +111,15 @@ static class Hud
 		DrawAt(camera.WorldToScreenPoint(centreOfMass + aim), size, Reticles.Aim);
 
 		// Draw the nose marker
+		var nosePoint = camera.WorldToScreenPoint(centreOfMass + vessel.ReferenceTransform.up * AimTracker.DISTANCE);
 		var nose = Reticles.Nose(settings.Reticle);
 		if (nose != null)
-			DrawAt(camera.WorldToScreenPoint(centreOfMass + vessel.ReferenceTransform.up * AimTracker.DISTANCE), size * NOSE_SCALE, nose);
-
+			DrawAt(nosePoint, size * NOSE_SCALE, nose);
 		GUI.color = oldColor;
+
+		// Warn while terrain avoidance pulls up
+		// Full strength whatever the markers' opacity, since it has to be seen.
+		if (isPullingUp)
+			DrawWarningAbove(nosePoint, size, 1f);
 	}
 }

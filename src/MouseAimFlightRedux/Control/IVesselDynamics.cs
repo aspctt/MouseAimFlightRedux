@@ -63,4 +63,13 @@ public interface IVesselDynamics
 
 	/// <summary>Flight path right of the nose positive, rad.</summary>
 	float Sideslip { get; }
+
+	/// <summary>
+	/// Velocity against the surface, m/s, in world space. Its change from step to step is
+	/// how terrain avoidance learns what the wings can do.
+	/// </summary>
+	Vector3 Velocity { get; }
+
+	/// <summary>Gravity at the vessel, m/s².</summary>
+	float Gravity { get; }
 }

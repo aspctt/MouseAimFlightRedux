@@ -111,6 +111,9 @@ public sealed class Autopilot
 	internal AxisController Yaw => yaw;
 	internal AxisController Roll => roll;
 
+	/// <summary>The pitch input that reached the vessel on the last step.</summary>
+	public float PitchInput => pitch.Input;
+
 	public void Reset()
 	{
 		pitch.Reset();

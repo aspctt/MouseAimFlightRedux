@@ -38,7 +38,13 @@ public sealed class Flight
 		public readonly float YawInput;
 		public readonly float RollInput;
 
-		public Sample(float time, float error, float angleOfAttack, float loadFactor, float bank, float rollRate, float pitchInput, float yawInput, float rollInput)
+		/// <summary>Height above the ground, m.</summary>
+		public readonly float Height;
+
+		/// <summary>True while terrain avoidance flew a recovery.</summary>
+		public readonly bool IsRecovering;
+
+		public Sample(float time, float error, float angleOfAttack, float loadFactor, float bank, float rollRate, float pitchInput, float yawInput, float rollInput, float height, bool isRecovering)
 		{
 			Time = time;
 			Error = error;
@@ -49,6 +55,8 @@ public sealed class Flight
 			PitchInput = pitchInput;
 			YawInput = yawInput;
 			RollInput = rollInput;
+			Height = height;
+			IsRecovering = isRecovering;
 		}
 	}
 
@@ -59,6 +67,12 @@ public sealed class Flight
 	/// normal speed.
 	/// </summary>
 	public const float DELTA_TIME = 0.02f;
+
+	/// <summary>
+	/// Starting height unless a test picks one, m: far enough above the ground for
+	/// terrain avoidance never to look at it.
+	/// </summary>
+	public const float FAR_ABOVE_GROUND = 100000f;
 
 	//// References and State
 
@@ -77,22 +91,31 @@ public sealed class Flight
 	/// </summary>
 	public float? PilotRoll;
 
+	/// <summary>With the gear down, terrain avoidance stands down, as in game.</summary>
+	public bool IsGearDown;
+
+	/// <summary>The setting that switches terrain avoidance on, as in game.</summary>
+	public bool ShouldAvoidTerrain = true;
+
 	//// Private Functions
 
 	static float DegreesBetween(Vector3 from, Vector3 to) => Mathf.Acos(Mathf.Clamp(Vector3.Dot(from.normalized, to.normalized), -1f, 1f)) * Mathf.Rad2Deg;
 
 	//// Public API
 
-	public Flight(Airframe airframe, FlightMode mode, Vector3 aim)
+	public Flight(Airframe airframe, FlightMode mode, Vector3 aim, float height = FAR_ABOVE_GROUND)
 	{
-		Aircraft = new SimulatedAircraft(airframe);
+		Aircraft = new SimulatedAircraft(airframe, height);
+		Ground = new SimulatedGround(Aircraft);
 		Mode = mode;
 		Aim = aim;
 	}
 
 	public SimulatedAircraft Aircraft { get; }
+	public SimulatedGround Ground { get; }
 	public FlightMode Mode { get; }
 	public Autopilot Autopilot { get; } = new();
+	public TerrainAvoidance Avoidance { get; } = new();
 	public IReadOnlyList<Sample> Samples => samples;
 
 	/// <summary>
@@ -110,8 +133,11 @@ public sealed class Flight
 	/// <summary>Flies one physics step.</summary>
 	public void Step()
 	{
+		// Keep out of the ground, unless landing
+		var target = Avoidance.Update(Aircraft, Ground, Aim, Mode, Autopilot.PitchInput, ShouldAvoidTerrain && !IsGearDown, DELTA_TIME);
+
 		// Fly toward the aim, leaving roll to the pilot while they hold it
-		Autopilot.Drive(Aircraft, Aim, Mode, DELTA_TIME, out var pitch, out var yaw, out var roll);
+		Autopilot.Drive(Aircraft, target, Avoidance.FlownMode(Mode), DELTA_TIME, out var pitch, out var yaw, out var roll);
 		if (PilotRoll is float pilotRoll)
 			roll = pilotRoll;
 
@@ -122,7 +148,7 @@ public sealed class Flight
 
 		// Record the step
 		var error = DegreesBetween(Aircraft.Nose, Aim);
-		samples.Add(new Sample(time, error, Aircraft.AngleOfAttack * Mathf.Rad2Deg, Aircraft.LoadFactor, Aircraft.Bank * Mathf.Rad2Deg, Aircraft.RollRate * Mathf.Rad2Deg, pitch, yaw, roll));
+		samples.Add(new Sample(time, error, Aircraft.AngleOfAttack * Mathf.Rad2Deg, Aircraft.LoadFactor, Aircraft.Bank * Mathf.Rad2Deg, Aircraft.RollRate * Mathf.Rad2Deg, pitch, yaw, roll, Ground.HeightAbove(Vector3.zero), Avoidance.IsRecovering));
 	}
 
 	public Flight Fly(float duration)
@@ -199,6 +225,33 @@ public sealed class Flight
 			foreach (var sample in samples)
 				lowest = Mathf.Min(lowest, sample.LoadFactor);
 			return lowest;
+		}
+	}
+
+	/// <summary>Lowest height above the ground, m. Below zero, it hit.</summary>
+	public float LowestHeight
+	{
+		get
+		{
+			var lowest = float.PositiveInfinity;
+			foreach (var sample in samples)
+				lowest = Mathf.Min(lowest, sample.Height);
+			return lowest;
+		}
+	}
+
+	/// <summary>How many times terrain avoidance took over.</summary>
+	public int RecoveryCount
+	{
+		get
+		{
+			var count = 0;
+			for (var index = 0; index < samples.Count; index++)
+			{
+				if (samples[index].IsRecovering && (index == 0 || !samples[index - 1].IsRecovering))
+					count++;
+			}
+			return count;
 		}
 	}
 

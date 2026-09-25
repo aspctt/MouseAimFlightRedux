@@ -69,6 +69,8 @@ public sealed class VesselDynamics : IVesselDynamics
 	public float Airspeed { get; private set; }
 	public float AngleOfAttack { get; private set; }
 	public float Sideslip { get; private set; }
+	public Vector3 Velocity { get; private set; }
+	public float Gravity { get; private set; }
 
 	//// Private Functions
 
@@ -205,6 +207,9 @@ public sealed class VesselDynamics : IVesselDynamics
 		// they never need more precision than that.
 		DynamicPressure = (float)vessel.dynamicPressurekPa;
 		Airspeed = (float)vessel.srfSpeed;
+		Velocity = (Vector3)vessel.srf_velocity;
+		var fromCentre = vessel.CoMD - vessel.mainBody.position;
+		Gravity = (float)(vessel.mainBody.gravParameter / fromCentre.sqrMagnitude);
 		if (Airspeed > 1f)
 		{
 			var velocity = vessel.GetSrfVelocity();

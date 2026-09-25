@@ -16,8 +16,18 @@ public sealed class Airframe
 
 	public string Name = "";
 
-	/// <summary>Held constant, m/s, as if the throttle always matched the drag.</summary>
+	/// <summary>
+	/// Cruise speed, m/s. Held constant, as if the throttle always matched the drag,
+	/// unless <see cref="SpeedRecoveryTime"/> is set.
+	/// </summary>
 	public float Airspeed = 150f;
+
+	/// <summary>
+	/// Time over which thrust and drag bring the speed back to cruise speed after a climb
+	/// or dive has changed it, s, or infinity to hold the speed constant. Climbs slow the
+	/// craft and dives speed it up, as in KSP.
+	/// </summary>
+	public float SpeedRecoveryTime = float.PositiveInfinity;
 
 	/// <summary>kg/m³. Sea level air by default, zero for space.</summary>
 	public float AirDensity = 1.225f;
@@ -30,6 +40,12 @@ public sealed class Airframe
 	/// stall, so the controller's own limits are all that stop a pull.
 	/// </summary>
 	public float LiftSlope;
+
+	/// <summary>
+	/// Angle the wings are set at against the fuselage, degrees, so they lift with the
+	/// fuselage along the flight path. Many KSP planes are built this way.
+	/// </summary>
+	public float WingIncidence;
 
 	/// <summary>
 	/// Side force acceleration per radian of sideslip, (m/s²)/(rad·kPa).
@@ -210,6 +226,15 @@ public sealed class Airframe
 		airframe.Name = "Noisy fighter";
 		airframe.AirflowNoise = 0.2f;
 		airframe.RateNoise = 0.5f;
+		return airframe;
+	}
+
+	/// <summary>The fighter with its wings set 3° up against the fuselage.</summary>
+	public static Airframe InclinedWingFighter()
+	{
+		var airframe = Fighter();
+		airframe.Name = "Inclined wing fighter";
+		airframe.WingIncidence = 3f;
 		return airframe;
 	}
 

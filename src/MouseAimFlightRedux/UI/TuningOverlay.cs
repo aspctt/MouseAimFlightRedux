@@ -196,6 +196,7 @@ sealed class TuningOverlay
 	FlightMode? mode;
 	VesselDynamics? dynamics;
 	Autopilot? autopilot;
+	TerrainAvoidance? avoidance;
 	Vessel? vessel;
 
 	GUIStyle CellStyle => cellStyle ??= new GUIStyle(HighLogic.Skin.label) { alignment = TextAnchor.MiddleRight, wordWrap = false };
@@ -221,6 +222,24 @@ sealed class TuningOverlay
 		_ => "Rate",
 	};
 
+	/// <summary>
+	/// Terrain avoidance's state, the recovery it last predicted, and its height next to
+	/// KSP's own radar altitude, which should roughly agree.
+	/// </summary>
+	static string TerrainLine(TerrainAvoidance avoidance, Vessel vessel)
+	{
+		// Sanity check
+		var state = avoidance.IsRecovering ? "PULLING UP" : avoidance.IsWatching ? "watching" : "off";
+		if (!avoidance.IsWatching)
+			return $"Terrain {state}";
+
+		// Describe the prediction
+		var clearance = float.IsPositiveInfinity(avoidance.PredictedClearance) ? "far" : $"{avoidance.PredictedClearance:0} m";
+		var pull = avoidance.HasLearnedLift ? $"{avoidance.AvailableLoadFactor:0.0} g" : $"{avoidance.AvailableLoadFactor:0.0} g assumed";
+		var height = float.IsPositiveInfinity(avoidance.Height) ? "-" : $"{avoidance.Height:0} m";
+		return $"Terrain {state}    recovery clears {clearance}    pull {pull}    height {height} (KSP radar {vessel.radarAltitude:0} m)    {avoidance.PredictionTime:0.00} ms";
+	}
+
 	static string HeldBy(AxisController axis, RateLimit upLimit, RateLimit downLimit) => axis.HeldLimit switch
 	{
 		1 => LimitName(upLimit),
@@ -232,7 +251,7 @@ sealed class TuningOverlay
 	{
 		// Sanity check
 		// Draw always sets these before the window runs.
-		if (mode == null || dynamics == null || autopilot == null || vessel == null)
+		if (mode == null || dynamics == null || autopilot == null || avoidance == null || vessel == null)
 			return;
 
 		// Draw the flight
@@ -240,6 +259,7 @@ sealed class TuningOverlay
 			GUILayout.Label("Mouse aim is off. Showing the last flight.");
 		GUILayout.Label($"{mode.Name}    {dynamics.Airspeed:0} m/s    q {dynamics.DynamicPressure:0.0} kPa    AoA {dynamics.AngleOfAttack * Mathf.Rad2Deg:0.0}°    Sideslip {dynamics.Sideslip * Mathf.Rad2Deg:0.0}°    {vessel.geeForce:0.0} g");
 		GUILayout.Label($"Aero {autopilot.AerodynamicBlend:0%}    Bank commit {autopilot.BankCommitment:0%}");
+		GUILayout.Label(TerrainLine(avoidance, vessel));
 		GUILayout.Space(6);
 
 		// Draw the table
@@ -328,7 +348,7 @@ sealed class TuningOverlay
 	}
 
 	/// <summary>Call from OnGUI.</summary>
-	public void Draw(bool isFlying, FlightMode mode, VesselDynamics dynamics, Autopilot autopilot, Vessel vessel)
+	public void Draw(bool isFlying, FlightMode mode, VesselDynamics dynamics, Autopilot autopilot, TerrainAvoidance avoidance, Vessel vessel)
 	{
 		// Take this frame's flight
 		if (isFlying != isActive)
@@ -337,6 +357,7 @@ sealed class TuningOverlay
 		this.mode = mode;
 		this.dynamics = dynamics;
 		this.autopilot = autopilot;
+		this.avoidance = avoidance;
 		this.vessel = vessel;
 
 		// Cut the window down to size on a layout pass

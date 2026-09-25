@@ -47,6 +47,7 @@ public sealed class Settings
 	public float ReticleOpacity = 1f;
 	public float ReticleSize = 0.75f;
 	public bool ShouldKeepAtmosphereAutopilotOff = true;
+	public bool ShouldAvoidTerrain;
 	public bool ShouldShowTuningOverlay;
 
 	static string FilePath => Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "MouseAimFlightRedux", "PluginData", "Settings.cfg");
@@ -86,6 +87,7 @@ public sealed class Settings
 		node.TryGetValue("reticleOpacity", ref settings.ReticleOpacity);
 		node.TryGetValue("reticleSize", ref settings.ReticleSize);
 		node.TryGetValue("keepAtmosphereAutopilotOff", ref settings.ShouldKeepAtmosphereAutopilotOff);
+		node.TryGetValue("avoidTerrain", ref settings.ShouldAvoidTerrain);
 		node.TryGetValue("tuningOverlay", ref settings.ShouldShowTuningOverlay);
 		return settings;
 	}
@@ -146,6 +148,7 @@ public sealed class Settings
 		node.AddValue("reticleOpacity", ReticleOpacity);
 		node.AddValue("reticleSize", ReticleSize);
 		node.AddValue("keepAtmosphereAutopilotOff", ShouldKeepAtmosphereAutopilotOff);
+		node.AddValue("avoidTerrain", ShouldAvoidTerrain);
 		node.AddValue("tuningOverlay", ShouldShowTuningOverlay);
 
 		var root = new ConfigNode();
