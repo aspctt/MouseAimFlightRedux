@@ -10,8 +10,9 @@ namespace MouseAimFlightRedux.Control;
 /// recoveries the controller could fly if it took over now: unload, roll the wings level,
 /// then a pull building up to the most the craft allows, into climbs from gentle to
 /// steep. When even the best would only just clear the ground, it takes over and flies
-/// the gentlest that clears, and hands back once a dive toward the pilot's aim could
-/// itself be recovered from. See docs/DESIGN.md, "Terrain avoidance".
+/// the gentlest that clears, pulling up by Unlimited's limits, and hands back once a dive
+/// toward the pilot's aim could itself be recovered from. See docs/DESIGN.md, "Terrain
+/// avoidance".
 /// </summary>
 public sealed class TerrainAvoidance
 {
@@ -117,6 +118,35 @@ public sealed class TerrainAvoidance
 	/// </summary>
 	static readonly FlightMode ESCAPE_FLOOR = new();
 
+	/// <summary>
+	/// The shipped Unlimited mode, whose limits a recovery pulls up by at least. Built in
+	/// rather than looked up, so a renamed or softened Unlimited can't weaken it.
+	/// </summary>
+	static readonly FlightMode PULL_UP_FLOOR = new()
+	{
+		Name = "Unlimited",
+		MaximumPitchRate = 90f,
+		MaximumYawRate = 40f,
+		MaximumRollRate = 360f,
+		MaximumLoadFactor = 0f,
+		MaximumAngleOfAttack = 30f,
+		MaximumNegativeAngleOfAttack = 30f,
+		MaximumBank = 180f,
+		BankBlendStart = 1.5f,
+		BankBlendEnd = 8f,
+		AttitudeResponse = 0.2f,
+		RateResponse = 0.1f,
+		ControlLag = 0.12f,
+		ControlGain = 0.9f,
+		BrakingShare = 0.75f,
+	};
+
+	/// <summary>
+	/// How long the pull-up lasts after the ground last looked close, s, unless the flight
+	/// path reaches the recovery climb first.
+	/// </summary>
+	const float PULL_UP_TIME = 3f;
+
 	//// References and State
 
 	readonly Stopwatch stopwatch = new();
@@ -173,6 +203,9 @@ public sealed class TerrainAvoidance
 	/// <summary>The level direction the current recovery climbs along.</summary>
 	Vector3 recoveryHeading;
 
+	/// <summary>Time left pulling up by Unlimited's limits, s.</summary>
+	float pullUpTimer;
+
 	/// <summary>
 	/// The mode a recovery flies by, and the mode it was made from.
 	/// </summary>
@@ -180,8 +213,20 @@ public sealed class TerrainAvoidance
 
 	FlightMode? escapeSource;
 
+	/// <summary>
+	/// The mode a recovery pulls up by, and the mode it was made from.
+	/// </summary>
+	FlightMode? pullUpMode;
+
+	FlightMode? pullUpSource;
+
 	/// <summary>True while flying a recovery.</summary>
 	public bool IsRecovering { get; private set; }
+
+	/// <summary>
+	/// True during a recovery's pull-up, flown by at least Unlimited's limits.
+	/// </summary>
+	public bool IsPullingUp => IsRecovering && pullUpTimer > 0f;
 
 	/// <summary>
 	/// True while watching the ground: switched on, gear up, airborne and fast enough to
@@ -455,9 +500,33 @@ public sealed class TerrainAvoidance
 	}
 
 	/// <summary>
-	/// The mode a recovery flies by: the current one, with its pitch, load and angle of
-	/// attack limits and response times at least as strong as Normal's. A gentle mode's
-	/// own limits would make every recovery start early.
+	/// A mode with every limit, response time, gain and blend at least as strong as a
+	/// floor's. The control lag stays the mode's, since it describes the craft rather than
+	/// how hard to fly it.
+	/// </summary>
+	static FlightMode Strengthened(FlightMode mode, FlightMode floor) => new()
+	{
+		Name = mode.Name,
+		MaximumPitchRate = Mathf.Max(mode.MaximumPitchRate, floor.MaximumPitchRate),
+		MaximumYawRate = Mathf.Max(mode.MaximumYawRate, floor.MaximumYawRate),
+		MaximumRollRate = Mathf.Max(mode.MaximumRollRate, floor.MaximumRollRate),
+		MaximumLoadFactor = mode.MaximumLoadFactor > 0f && floor.MaximumLoadFactor > 0f ? Mathf.Max(mode.MaximumLoadFactor, floor.MaximumLoadFactor) : 0f,
+		MaximumAngleOfAttack = Mathf.Max(mode.MaximumAngleOfAttack, floor.MaximumAngleOfAttack),
+		MaximumNegativeAngleOfAttack = Mathf.Max(mode.MaximumNegativeAngleOfAttack, floor.MaximumNegativeAngleOfAttack),
+		MaximumBank = Mathf.Max(mode.MaximumBank, floor.MaximumBank),
+		BankBlendStart = Mathf.Min(mode.BankBlendStart, floor.BankBlendStart),
+		BankBlendEnd = Mathf.Min(mode.BankBlendEnd, floor.BankBlendEnd),
+		AttitudeResponse = Mathf.Min(mode.AttitudeResponse, floor.AttitudeResponse),
+		RateResponse = Mathf.Min(mode.RateResponse, floor.RateResponse),
+		ControlLag = mode.ControlLag,
+		ControlGain = Mathf.Max(mode.ControlGain, floor.ControlGain),
+		BrakingShare = Mathf.Max(mode.BrakingShare, floor.BrakingShare),
+	};
+
+	/// <summary>
+	/// The mode a recovery flies by once pulled up, and plans on: the current one, at
+	/// least as strong as Normal. A gentle mode's own limits would make every recovery
+	/// start early.
 	/// </summary>
 	FlightMode EscapeMode(FlightMode mode)
 	{
@@ -467,25 +536,23 @@ public sealed class TerrainAvoidance
 
 		// Strengthen the mode
 		escapeSource = mode;
-		escapeMode = new FlightMode
-		{
-			Name = mode.Name,
-			MaximumPitchRate = Mathf.Max(mode.MaximumPitchRate, ESCAPE_FLOOR.MaximumPitchRate),
-			MaximumYawRate = Mathf.Max(mode.MaximumYawRate, ESCAPE_FLOOR.MaximumYawRate),
-			MaximumRollRate = Mathf.Max(mode.MaximumRollRate, ESCAPE_FLOOR.MaximumRollRate),
-			MaximumLoadFactor = mode.MaximumLoadFactor > 0f ? Mathf.Max(mode.MaximumLoadFactor, ESCAPE_FLOOR.MaximumLoadFactor) : 0f,
-			MaximumAngleOfAttack = Mathf.Max(mode.MaximumAngleOfAttack, ESCAPE_FLOOR.MaximumAngleOfAttack),
-			MaximumNegativeAngleOfAttack = mode.MaximumNegativeAngleOfAttack,
-			MaximumBank = Mathf.Max(mode.MaximumBank, ESCAPE_FLOOR.MaximumBank),
-			BankBlendStart = mode.BankBlendStart,
-			BankBlendEnd = mode.BankBlendEnd,
-			AttitudeResponse = Mathf.Min(mode.AttitudeResponse, ESCAPE_FLOOR.AttitudeResponse),
-			RateResponse = Mathf.Min(mode.RateResponse, ESCAPE_FLOOR.RateResponse),
-			ControlLag = mode.ControlLag,
-			ControlGain = mode.ControlGain,
-			BrakingShare = mode.BrakingShare,
-		};
+		escapeMode = Strengthened(mode, ESCAPE_FLOOR);
 		return escapeMode;
+	}
+
+	/// <summary>
+	/// The mode a recovery pulls up by: the current one, at least as strong as Unlimited.
+	/// </summary>
+	FlightMode PullUpMode(FlightMode mode)
+	{
+		// Sanity check
+		if (pullUpMode != null && pullUpSource == mode)
+			return pullUpMode;
+
+		// Strengthen the mode
+		pullUpSource = mode;
+		pullUpMode = Strengthened(mode, PULL_UP_FLOOR);
+		return pullUpMode;
 	}
 
 	/// <summary>
@@ -518,9 +585,10 @@ public sealed class TerrainAvoidance
 	//// Public API
 
 	/// <summary>
-	/// The mode for the controller to fly by: during a recovery, the escape mode.
+	/// The mode for the controller to fly by: during a recovery, the pull-up or escape
+	/// mode.
 	/// </summary>
-	public FlightMode FlownMode(FlightMode mode) => IsRecovering ? EscapeMode(mode) : mode;
+	public FlightMode FlownMode(FlightMode mode) => !IsRecovering ? mode : IsPullingUp ? PullUpMode(mode) : EscapeMode(mode);
 
 	/// <summary>
 	/// Lets go of any recovery and starts measuring afresh. What has been learned about
@@ -531,6 +599,7 @@ public sealed class TerrainAvoidance
 		isPrimed = false;
 		IsRecovering = false;
 		IsWatching = false;
+		pullUpTimer = 0f;
 		recoveryHeading = Vector3.zero;
 		predictionTimer = 0f;
 		PredictedClearance = float.PositiveInfinity;
@@ -566,6 +635,7 @@ public sealed class TerrainAvoidance
 		if (!IsWatching)
 		{
 			IsRecovering = false;
+			pullUpTimer = 0f;
 			PredictedClearance = float.PositiveInfinity;
 			return pilotAim;
 		}
@@ -579,6 +649,12 @@ public sealed class TerrainAvoidance
 		var heading = aheadHeading != Vector3.zero ? aheadHeading : canopyHeading;
 		if (heading == Vector3.zero)
 			return pilotAim;
+
+		// Count down the pull-up, ending it once the flight path reaches the climb
+		// Past that the recovery only holds the climb, and Normal's limits do for that
+		// without bleeding the speed a 30° angle of attack would.
+		var pathClimb = Mathf.Asin(Mathf.Clamp(Vector3.Dot(vessel.Velocity.normalized, up), -1f, 1f));
+		pullUpTimer = pathClimb >= recoveryClimb ? 0f : Mathf.Max(pullUpTimer - deltaTime, 0f);
 
 		// Predict the recovery now and then, or every step when it's getting close
 		predictionTimer -= deltaTime;
@@ -608,10 +684,19 @@ public sealed class TerrainAvoidance
 			// is safe
 			// It always looks, however high above the ground below: flying over a valley
 			// toward a mountain, it used to skip looking until the mountain was close.
+			// Predictions plan on Normal's limits while the pull-up flies by Unlimited's,
+			// so the harder pull is margin rather than a reason to take over later. With
+			// Normal's alone, a craft heading into a mountain face didn't pull up in time.
 			if (PredictedClearance < CLEARANCE)
+			{
 				IsRecovering = true;
+				pullUpTimer = PULL_UP_TIME;
+			}
 			else if (IsRecovering && CanHandBack(vessel, terrain, escape, pilotAim))
+			{
 				IsRecovering = false;
+				pullUpTimer = 0f;
+			}
 
 			// Time it
 			// The stopwatch reports a double. A float holds any time this could take.
@@ -627,7 +712,6 @@ public sealed class TerrainAvoidance
 		if (!IsRecovering)
 			return pilotAim;
 
-		var pathClimb = Mathf.Asin(Mathf.Clamp(Vector3.Dot(vessel.Velocity.normalized, up), -1f, 1f));
 		var noseAbovePath = Mathf.Asin(Mathf.Clamp(Vector3.Dot(vessel.Nose, up), -1f, 1f)) - pathClimb;
 		var aimClimb = Mathf.Clamp(Mathf.Max(recoveryClimb, pathClimb) + Mathf.Max(noseAbovePath, 0f), 0f, 0.45f * Mathf.PI);
 		var recoveryDirection = recoveryHeading != Vector3.zero ? recoveryHeading : heading;

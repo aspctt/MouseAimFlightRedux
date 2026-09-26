@@ -135,6 +135,27 @@ public sealed class TerrainAvoidanceTests
 		TestContext.Out.WriteLine(FormattableString.Invariant($"{flight.Mode.Name} / {flight.Aircraft.Airframe.Name} / {label}: lowest {flight.LowestHeight:0} m, {flight.RecoveryCount} recoveries, pull {flight.Avoidance.AvailableLoadFactor:0.0} g {pull}"));
 	}
 
+	/// <summary>
+	/// Checks a flown mode's limits and response times are at least as strong as a
+	/// floor's. No load limit counts as the strongest.
+	/// </summary>
+	static void AssertAtLeast(FlightMode flown, FlightMode floor)
+	{
+		// Compare the rates, angles and response times
+		Assert.That(flown.MaximumPitchRate, Is.GreaterThanOrEqualTo(floor.MaximumPitchRate), $"pitch rate against {floor.Name}, °/s");
+		Assert.That(flown.MaximumRollRate, Is.GreaterThanOrEqualTo(floor.MaximumRollRate), $"roll rate against {floor.Name}, °/s");
+		Assert.That(flown.MaximumAngleOfAttack, Is.GreaterThanOrEqualTo(floor.MaximumAngleOfAttack), $"angle of attack against {floor.Name}, °");
+		Assert.That(flown.AttitudeResponse, Is.LessThanOrEqualTo(floor.AttitudeResponse), $"attitude response against {floor.Name}, s");
+		Assert.That(flown.RateResponse, Is.LessThanOrEqualTo(floor.RateResponse), $"rate response against {floor.Name}, s");
+
+		// Compare the load limit
+		var hasNoLoadLimit = flown.MaximumLoadFactor <= 0f;
+		if (floor.MaximumLoadFactor <= 0f)
+			Assert.That(hasNoLoadLimit, Is.True, $"no load limit, like {floor.Name}");
+		else
+			Assert.That(hasNoLoadLimit || flown.MaximumLoadFactor >= floor.MaximumLoadFactor, Is.True, $"load limit against {floor.Name}");
+	}
+
 	//// Public API
 
 	[TestCaseSource(nameof(DiveCases))]
@@ -228,6 +249,36 @@ public sealed class TerrainAvoidanceTests
 		// Check it climbed over
 		Assert.That(flight.RecoveryCount, Is.GreaterThan(0), "recoveries");
 		Assert.That(flight.LowestHeight, Is.GreaterThan(SAFE_HEIGHT), "lowest height, m");
+	}
+
+	/// <summary>
+	/// Whatever the pilot's mode, the pull-up flies by at least the shipped Unlimited
+	/// mode's limits, and the rest of the recovery by at least Normal's.
+	/// </summary>
+	[TestCaseSource(nameof(ModeCases))]
+	public void PullsUpByUnlimitedLimits(FlightMode mode)
+	{
+		// Dive at the ground until it pulls up
+		var flight = new Flight(TradingSpeed(Airframe.Fighter()), mode, Flight.Direction(0f, -60f), DIVE_START_HEIGHT);
+		var steps = Mathf.RoundToInt(DIVE_DURATION / Flight.DELTA_TIME);
+		for (var step = 0; step < steps && !flight.Avoidance.IsPullingUp; step++)
+			flight.Step();
+		Assert.That(flight.Avoidance.IsPullingUp, Is.True, "pulling up");
+		AssertAtLeast(flight.Avoidance.FlownMode(mode), Named("Unlimited"));
+
+		// Fly on until the pull-up ends
+		var pullUpStart = flight.Samples[flight.Samples.Count - 1].Time;
+		for (var step = 0; step < steps && flight.Avoidance.IsPullingUp; step++)
+			flight.Step();
+		var pullUpTime = flight.Samples[flight.Samples.Count - 1].Time - pullUpStart;
+		Report(FormattableString.Invariant($"Pull-up for {pullUpTime:0.00} s"), flight);
+
+		// Check the recovery carries on by Normal's limits
+		var normal = Named("Normal");
+		var escape = flight.Avoidance.FlownMode(mode);
+		Assert.That(flight.Avoidance.IsRecovering, Is.True, "still recovering after the pull-up");
+		AssertAtLeast(escape, normal);
+		Assert.That(escape.MaximumAngleOfAttack, Is.EqualTo(Mathf.Max(mode.MaximumAngleOfAttack, normal.MaximumAngleOfAttack)), "angle of attack after the pull-up, °");
 	}
 
 	[TestCaseSource(nameof(ModeCases))]

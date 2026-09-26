@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Terrain avoidance pulls up by Unlimited's limits, whatever the flight mode, until it's climbing clear. It takes over no earlier than before, but pulls away from mountains much harder
+
 ## [1.4.0] - 2026-09-25
 
 ### Added

@@ -229,7 +229,7 @@ sealed class TuningOverlay
 	static string TerrainLine(TerrainAvoidance avoidance, Vessel vessel)
 	{
 		// Sanity check
-		var state = avoidance.IsRecovering ? "PULLING UP" : avoidance.IsWatching ? "watching" : "off";
+		var state = avoidance.IsPullingUp ? "PULLING UP (Unlimited)" : avoidance.IsRecovering ? "PULLING UP" : avoidance.IsWatching ? "watching" : "off";
 		if (!avoidance.IsWatching)
 			return $"Terrain {state}";
 
