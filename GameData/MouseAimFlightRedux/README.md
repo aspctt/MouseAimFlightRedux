@@ -1,7 +1,7 @@
 # <p align=center> Mouse Aim Flight Redux </p>
 
 <p align=center>
-	<img alt="Version" src="https://img.shields.io/badge/Version-1.5.0-orange">
+	<img alt="Version" src="https://img.shields.io/badge/Version-1.5.1-orange">
 	<img alt="Available for" src="https://img.shields.io/badge/Available_for-KSP_1.12.x-blue">
 	<img alt="License" src="https://img.shields.io/badge/License-All_Rights_Reserved-red">
 </p>

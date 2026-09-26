@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-09-26
+
+### Changed
+
+- Pitch and yaw keys no longer pull the aim, or the camera following it, onto the nose. The aim stays where you put it, and your plane turns back to it when you let go
+
 ## [1.5.0] - 2026-09-26
 
 ### Added
@@ -116,7 +122,8 @@ First release. Mouse Aim Flight Redux continues Mouse Aim Flight 1.1.3 by tetryd
 - The toolbar button and its listeners were never cleaned up when leaving flight
 - Control surfaces docked or decoupled while mouse aim was on kept the wrong speed until the craft was reloaded
 
-[Unreleased]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.5.0...HEAD
+[Unreleased]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.5.1...HEAD
+[1.5.1]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.5.0...1.5.1
 [1.5.0]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.4.1...1.5.0
 [1.4.1]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.4.0...1.4.1
 [1.4.0]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.3.0...1.4.0
