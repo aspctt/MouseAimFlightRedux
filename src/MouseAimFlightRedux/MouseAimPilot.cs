@@ -43,6 +43,7 @@ sealed class MouseAimPilot : MonoBehaviour
 	//// References and State
 
 	readonly AimTracker aim = new();
+	readonly AimCamera aimCamera = new();
 	readonly Autopilot autopilot = new();
 	readonly ControlSurfaceBoost boost = new();
 	readonly AutopilotLockout lockout = new();
@@ -78,6 +79,7 @@ sealed class MouseAimPilot : MonoBehaviour
 		isActive = shouldBeActive && vessel != null;
 		LockCursor(isActive);
 		autopilot.Reset();
+		aimCamera.Release();
 		isPilotOverriding = false;
 
 		// Turn off, giving back whatever was taken over
@@ -224,6 +226,13 @@ sealed class MouseAimPilot : MonoBehaviour
 			aim.Recentre(vessel);
 		else
 			aim.Follow(settings, FlightCamera.fetch.mainCamera.transform);
+
+		// Swing the camera round behind it, leaving it to the player in free look
+		// Real time, so the camera feels the same in physics warp.
+		if (settings.ShouldCameraFollowAim && !aim.IsFreeLooking)
+			aimCamera.Follow(vessel, aim.Aim, Time.unscaledDeltaTime);
+		else
+			aimCamera.Release();
 	}
 
 	void LateUpdate()
@@ -257,6 +266,6 @@ sealed class MouseAimPilot : MonoBehaviour
 		if (isActive)
 			Hud.Draw(vessel, aim.Aim, avoidance.IsRecovering, FlightCamera.fetch.mainCamera);
 		if (Settings.Instance.ShouldShowTuningOverlay)
-			tuning.Draw(isActive, FlightModes.Current, dynamics, autopilot, avoidance, vessel);
+			tuning.Draw(isActive, FlightModes.Current, dynamics, autopilot, avoidance, aimCamera, vessel);
 	}
 }

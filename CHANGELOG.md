@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- War Thunder style camera, switched on in the settings with "Camera Follows Aim": the camera swings round behind your aim, so the mouse turns the view and your plane follows. Hold the right mouse button to look around
+- The tuning overlay shows the camera mode and pitch
+
 ## [1.4.1] - 2026-09-26
 
 ### Changed

@@ -23,6 +23,7 @@ One addon per flight scene runs mouse aim for the active vessel, since only that
 |---|---|---|
 | `MouseAimPilot.cs` | Hotkeys, cursor, on and off, following the active vessel, sending inputs | BSD |
 | `AimTracker.cs` | The aim point and free look | BSD |
+| `AimCamera.cs` | The camera following the aim | |
 | `ControlSurfaceBoost.cs` | The control surface speed-up | BSD |
 | `AutopilotLockout.cs` | Keeping SAS and Atmosphere Autopilot off | |
 | `AtmosphereAutopilot.cs` | Atmosphere Autopilot's master switch and surface speed, by reflection | |
@@ -52,6 +53,15 @@ Angles come from `atan2` on those vectors, so signs follow geometry, not a libra
 The aim sits 5000 m ahead of the centre of mass, fixed in world space so it stays put as the craft turns. The mouse moves it in the camera's frame, so right on the mouse is always right on screen. Sensitivity is in degrees per mouse step.
 
 Keyboard pitch or yaw takes over and re-centres the aim on the nose. Keyboard roll takes over roll only. The right mouse button, or KSP's own mouse look, freezes the aim so the camera can move.
+
+## Camera
+
+With "Camera Follows Aim" on, KSP's flight camera swings round behind the aim, War Thunder style, so the mouse turns the view and the aircraft follows it.
+
+- **Placing it:** the camera sits behind the aim, 8° above the line through it, and hands the position to `FlightCamera.SetCamCoordsFromPosition`, which works out heading, pitch and distance in the current camera mode's frame. KSP's camera always centres the vessel, so the aim shows 8° above the aircraft.
+- **Up:** "above" is the camera's own up, so it matches the screen in every camera mode.
+- **Smoothing:** it closes on its place with a 0.08 s time constant, in real time so physics warp doesn't change the feel. The direction is kept by the mod rather than read back, so a camera mode that turns with the vessel can't drag it off the aim.
+- **Left alone:** in free look, while another vessel or a part has the camera, outside the flight camera, or while another mod has taken it over. Zoom, camera modes and KSP keeping the camera out of the ground work as before.
 
 ## Controller
 
@@ -135,6 +145,7 @@ Keeps the craft out of the ground at the last moment, like a fighter jet's autom
 A window for tuning flight modes, switched on in the settings. It shows the last physics step the controller flew, and while mouse aim is off it keeps showing the last flight.
 
 - **Top:** mode, airspeed, dynamic pressure, angle of attack, sideslip and G, then how far aircraft behaviour has faded in and how far the bank has committed toward the aim.
+- **Camera:** the camera mode, whether it follows the aim, its pitch against the limits KSP holds it to, and its distance.
 - **Terrain:** whether terrain avoidance is off, watching or pulling up, and whether by Unlimited's limits, how close its predicted recovery comes to the ground, the pull it counts on and whether that's learned or assumed, the height above the ground next to KSP's radar altitude, and how long the predictions took.
 - **Per axis:** the angle error, the rate asked for against the rate flown, and the limits the request is held to. When it's held at one, what set it: Rate, G or AoA. Then the input as it reached the vessel, the authority, and the fixed-speed share.
 - **Graphs:** 5.6 seconds per axis of the rate asked for, the rate flown, the input and the limits. Rates are scaled to 1.25 times the mode's rate limit and inputs to full travel. Anything off the scale runs along the edge.
@@ -162,6 +173,7 @@ Saved to `GameData/MouseAimFlightRedux/PluginData/Settings.cfg`, which KSP doesn
 | `reticleSize` | 0.75 | aim ring size, as a fraction of 1/32 of the screen width. The nose marker is half that |
 | `keepAtmosphereAutopilotOff` | True | see "Other autopilots", shown only with Atmosphere Autopilot installed |
 | `avoidTerrain` | False | see "Terrain avoidance" |
+| `cameraFollowsAim` | False | see "Camera" |
 | `tuningOverlay` | False | shows the tuning overlay |
 
 To bind a hotkey, click its button and press a key. Escape cancels. "Reset to defaults" asks once more, then puts every setting above back to its default. Flight modes are untouched.
@@ -198,7 +210,7 @@ The Crosshair nose marker has a white centre dot and four arms with a gap betwee
 dotnet test src/MouseAimFlightRedux.Tests
 ```
 
-It needs `KSPRoot` like the plugin, for Unity's vector maths. Nothing from KSP itself loads. The controller reads a vessel through `IVesselDynamics`, which `VesselDynamics` measures in game and the simulator fills instead. Terrain avoidance reads the ground through `ITerrain`, which is the body's height map in game and flat ground with an optional ridge in the tests.
+It needs `KSPRoot` like the plugin, for Unity's vector maths. Nothing from KSP itself loads, so the camera is tested only for where it sits against the aim. The controller reads a vessel through `IVesselDynamics`, which `VesselDynamics` measures in game and the simulator fills instead. Terrain avoidance reads the ground through `ITerrain`, which is the body's height map in game and flat ground with an optional ridge in the tests.
 
 - **Simulator:** a rigid airframe at a constant airspeed, stepped every 0.02 s. Each axis turns under its control surfaces, reaction wheels, stability and damping. Surfaces either ease into position or move at a fixed speed, like Atmosphere Autopilot's. Lift, side force and gravity turn the flight path. Lift is linear, with no stall.
 - **Airframes:** a light fighter, also flown at 100 and 250 m/s, a cargo plane, a slightly unstable fighter, one with Atmosphere Autopilot's surfaces, one whose authority is misjudged by double and by half, one with random errors on every measurement, one with its wings set at an angle, and a probe in space.

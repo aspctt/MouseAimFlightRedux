@@ -138,6 +138,7 @@ sealed class SettingsWindow : MonoBehaviour
 		if (AtmosphereAutopilot.IsAvailable)
 			settings.ShouldKeepAtmosphereAutopilotOff = GUILayout.Toggle(settings.ShouldKeepAtmosphereAutopilotOff, "Keep Atmosphere Autopilot Off");
 		settings.ShouldAvoidTerrain = GUILayout.Toggle(settings.ShouldAvoidTerrain, "Avoid Terrain");
+		settings.ShouldCameraFollowAim = GUILayout.Toggle(settings.ShouldCameraFollowAim, "Camera Follows Aim");
 		settings.ShouldShowTuningOverlay = GUILayout.Toggle(settings.ShouldShowTuningOverlay, "Show Tuning Overlay");
 		GUILayout.Space(10);
 

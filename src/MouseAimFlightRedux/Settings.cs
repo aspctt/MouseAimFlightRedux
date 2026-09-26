@@ -48,6 +48,7 @@ public sealed class Settings
 	public float ReticleSize = 0.75f;
 	public bool ShouldKeepAtmosphereAutopilotOff = true;
 	public bool ShouldAvoidTerrain;
+	public bool ShouldCameraFollowAim;
 	public bool ShouldShowTuningOverlay;
 
 	static string FilePath => Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "MouseAimFlightRedux", "PluginData", "Settings.cfg");
@@ -88,6 +89,7 @@ public sealed class Settings
 		node.TryGetValue("reticleSize", ref settings.ReticleSize);
 		node.TryGetValue("keepAtmosphereAutopilotOff", ref settings.ShouldKeepAtmosphereAutopilotOff);
 		node.TryGetValue("avoidTerrain", ref settings.ShouldAvoidTerrain);
+		node.TryGetValue("cameraFollowsAim", ref settings.ShouldCameraFollowAim);
 		node.TryGetValue("tuningOverlay", ref settings.ShouldShowTuningOverlay);
 		return settings;
 	}
@@ -149,6 +151,7 @@ public sealed class Settings
 		node.AddValue("reticleSize", ReticleSize);
 		node.AddValue("keepAtmosphereAutopilotOff", ShouldKeepAtmosphereAutopilotOff);
 		node.AddValue("avoidTerrain", ShouldAvoidTerrain);
+		node.AddValue("cameraFollowsAim", ShouldCameraFollowAim);
 		node.AddValue("tuningOverlay", ShouldShowTuningOverlay);
 
 		var root = new ConfigNode();
