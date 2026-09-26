@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Pitch and yaw keys no longer pull the aim, or the camera following it, onto the nose. The aim stays where you put it, and your plane turns back to it when you let go
+
 ## [1.5.0] - 2026-09-26
 
 ### Added

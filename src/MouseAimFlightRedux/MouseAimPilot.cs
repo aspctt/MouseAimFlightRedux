@@ -55,12 +55,6 @@ sealed class MouseAimPilot : MonoBehaviour
 	TerrainAvoidance? avoidance;
 	bool isActive;
 
-	/// <summary>
-	/// Set in the physics callback while the pilot holds pitch or yaw, read by the aim in
-	/// Update.
-	/// </summary>
-	bool isPilotOverriding;
-
 	//// Private Functions
 
 	static void LockCursor(bool isLocked)
@@ -80,7 +74,6 @@ sealed class MouseAimPilot : MonoBehaviour
 		LockCursor(isActive);
 		autopilot.Reset();
 		aimCamera.Release();
-		isPilotOverriding = false;
 
 		// Turn off, giving back whatever was taken over
 		if (!isActive || vessel == null)
@@ -133,14 +126,14 @@ sealed class MouseAimPilot : MonoBehaviour
 			return;
 
 		// Let the pilot take over pitch and yaw, even from a recovery
+		// The aim stays where it is, as in War Thunder, so the craft turns back to it
+		// once the keys are let go.
 		if (state.pitch != state.pitchTrim || state.yaw != state.yawTrim)
 		{
-			isPilotOverriding = true;
 			autopilot.Reset();
 			avoidance.Reset();
 			return;
 		}
-		isPilotOverriding = false;
 
 		// Measure the vessel
 		var deltaTime = TimeWarp.fixedDeltaTime;
@@ -222,10 +215,7 @@ sealed class MouseAimPilot : MonoBehaviour
 		// Move the aim
 		if (!isActive)
 			return;
-		if (isPilotOverriding)
-			aim.Recentre(vessel);
-		else
-			aim.Follow(settings, FlightCamera.fetch.mainCamera.transform);
+		aim.Follow(settings, FlightCamera.fetch.mainCamera.transform);
 
 		// Swing the camera round behind it, leaving it to the player in free look
 		// Real time, so the camera feels the same in physics warp.

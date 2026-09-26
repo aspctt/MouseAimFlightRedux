@@ -52,7 +52,7 @@ Angles come from `atan2` on those vectors, so signs follow geometry, not a libra
 
 The aim sits 5000 m ahead of the centre of mass, fixed in world space so it stays put as the craft turns. The mouse moves it in the camera's frame, so right on the mouse is always right on screen. Sensitivity is in degrees per mouse step.
 
-Keyboard pitch or yaw takes over and re-centres the aim on the nose. Keyboard roll takes over roll only. The right mouse button, or KSP's own mouse look, freezes the aim so the camera can move.
+Keyboard pitch or yaw takes over, as in War Thunder: the aim stays put and the mouse still moves it, so the craft turns back to it on letting go. Keyboard roll takes over roll only. The right mouse button, or KSP's own mouse look, freezes the aim so the camera can move.
 
 ## Camera
 
@@ -61,6 +61,7 @@ With "Camera Follows Aim" on, KSP's flight camera swings round behind the aim, W
 - **Placing it:** the camera sits behind the aim, 8° above the line through it, and hands the position to `FlightCamera.SetCamCoordsFromPosition`, which works out heading, pitch and distance in the current camera mode's frame. KSP's camera always centres the vessel, so the aim shows 8° above the aircraft.
 - **Up:** "above" is the camera's own up, so it matches the screen in every camera mode.
 - **Smoothing:** it closes on its place with a 0.08 s time constant, in real time so physics warp doesn't change the feel. The direction is kept by the mod rather than read back, so a camera mode that turns with the vessel can't drag it off the aim.
+- **Keyboard:** pitch or yaw keys fly the craft while the aim and camera stay where the player is looking, as in War Thunder.
 - **Left alone:** in free look, while another vessel or a part has the camera, outside the flight camera, or while another mod has taken it over. Zoom, camera modes and KSP keeping the camera out of the ground work as before.
 
 ## Controller
