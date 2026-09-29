@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-09-30
+
 ### Added
 
 - The toolbar button can go on Blizzy's toolbar, or both toolbars, picked in Toolbar Controller's settings
@@ -134,7 +136,8 @@ First release. Mouse Aim Flight Redux continues Mouse Aim Flight 1.1.3 by tetryd
 - The toolbar button and its listeners were never cleaned up when leaving flight
 - Control surfaces docked or decoupled while mouse aim was on kept the wrong speed until the craft was reloaded
 
-[Unreleased]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.5.1...HEAD
+[Unreleased]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.6.0...HEAD
+[1.6.0]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.5.1...1.6.0
 [1.5.1]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.5.0...1.5.1
 [1.5.0]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.4.1...1.5.0
 [1.4.1]: https://github.com/aspctt/MouseAimFlightRedux/compare/1.4.0...1.4.1
