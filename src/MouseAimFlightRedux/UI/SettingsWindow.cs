@@ -29,6 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using System;
 using KSP.UI.Screens;
 using MouseAimFlightRedux.Control;
+using ToolbarControl_NS;
 using UnityEngine;
 
 namespace MouseAimFlightRedux.UI;
@@ -48,6 +49,21 @@ sealed class SettingsWindow : MonoBehaviour
 
 	//// Constants
 
+	public const string TITLE = "Mouse Aim Flight Redux";
+
+	/// <summary>The name Toolbar Controller knows the mod by.</summary>
+	public const string TOOLBAR_NAMESPACE = "MouseAimFlightRedux";
+
+	const string TOOLBAR_BUTTON_IDENTIFIER = "MouseAimFlightReduxSettings";
+
+	/// <summary>
+	/// Under GameData, without the extension. The stock toolbar takes the large icon and
+	/// Blizzy's toolbar the small one.
+	/// </summary>
+	const string LARGE_ICON_PATH = "MouseAimFlightRedux/Textures/ToolbarIcon38";
+
+	const string SMALL_ICON_PATH = "MouseAimFlightRedux/Textures/ToolbarIcon24";
+
 	const string BINDING_LOCK_IDENTIFIER = "MouseAimFlightReduxKeyBinding";
 
 	const float MARKER_ROW_HEIGHT = 30f;
@@ -59,7 +75,6 @@ sealed class SettingsWindow : MonoBehaviour
 	/// </summary>
 	static Rect windowRect;
 
-	ApplicationLauncherButton? button;
 	bool isVisible;
 	KeyBinding binding;
 	bool isMarkerListOpen;
@@ -259,28 +274,6 @@ sealed class SettingsWindow : MonoBehaviour
 		currentEvent.Use();
 	}
 
-	void OnApplicationLauncherReady()
-	{
-		// Sanity check
-		if (button != null || !ApplicationLauncher.Ready)
-			return;
-
-		// Add the button
-		button = ApplicationLauncher.Instance.AddModApplication(OnToolbarButtonOn, OnToolbarButtonOff, null, null, null, null, ApplicationLauncher.AppScenes.FLIGHT, Reticles.Icon);
-	}
-
-	void OnApplicationLauncherDestroyed()
-	{
-		// Sanity check
-		if (button == null)
-			return;
-
-		// Remove the button
-		if (ApplicationLauncher.Instance != null)
-			ApplicationLauncher.Instance.RemoveModApplication(button);
-		button = null;
-	}
-
 	void OnToolbarButtonOn()
 	{
 		isVisible = true;
@@ -304,20 +297,20 @@ sealed class SettingsWindow : MonoBehaviour
 
 	void Start()
 	{
+		// Place the window the first time
 		if (windowRect.width <= 0f)
 			windowRect = new Rect(Screen.width - 340f, 100f, 280f, 0f);
 
-		GameEvents.onGUIApplicationLauncherReady.Add(OnApplicationLauncherReady);
-		GameEvents.onGUIApplicationLauncherDestroyed.Add(OnApplicationLauncherDestroyed);
-		if (ApplicationLauncher.Ready)
-			OnApplicationLauncherReady();
+		// Add the toolbar button
+		// Toolbar Controller puts it on the stock toolbar, Blizzy's, or both, as the player
+		// picks. It lives on this object, so it goes, taking the button with it, when the
+		// flight ends.
+		var toolbarButton = gameObject.AddComponent<ToolbarControl>();
+		toolbarButton.AddToAllToolbars(OnToolbarButtonOn, OnToolbarButtonOff, ApplicationLauncher.AppScenes.FLIGHT, TOOLBAR_NAMESPACE, TOOLBAR_BUTTON_IDENTIFIER, LARGE_ICON_PATH, SMALL_ICON_PATH, TITLE);
 	}
 
 	void OnDestroy()
 	{
-		GameEvents.onGUIApplicationLauncherReady.Remove(OnApplicationLauncherReady);
-		GameEvents.onGUIApplicationLauncherDestroyed.Remove(OnApplicationLauncherDestroyed);
-		OnApplicationLauncherDestroyed();
 		EndBinding();
 		Settings.Instance.Save();
 	}
@@ -352,6 +345,6 @@ sealed class SettingsWindow : MonoBehaviour
 			windowRect.height = 0f;
 			shouldShrink = false;
 		}
-		windowRect = GUILayout.Window(GetHashCode(), windowRect, DrawWindow, "Mouse Aim Flight Redux");
+		windowRect = ModWindow.Draw(GetHashCode(), windowRect, DrawWindow, TITLE);
 	}
 }

@@ -36,6 +36,24 @@
 		</AssemblyAttribute>
 	</ItemGroup>
 
+	<!-- Loads the plugin after the mods it needs, and has KSP skip it with a warning when one is missing. Versions as their READMEs ask for. -->
+	<ItemGroup>
+		<AssemblyAttribute Include="KSPAssemblyDependency">
+			<_Parameter1>ClickThroughBlocker</_Parameter1>
+			<_Parameter2>1</_Parameter2>
+			<_Parameter2_IsLiteral>true</_Parameter2_IsLiteral>
+			<_Parameter3>0</_Parameter3>
+			<_Parameter3_IsLiteral>true</_Parameter3_IsLiteral>
+		</AssemblyAttribute>
+		<AssemblyAttribute Include="KSPAssemblyDependency">
+			<_Parameter1>ToolbarController</_Parameter1>
+			<_Parameter2>1</_Parameter2>
+			<_Parameter2_IsLiteral>true</_Parameter2_IsLiteral>
+			<_Parameter3>0</_Parameter3>
+			<_Parameter3_IsLiteral>true</_Parameter3_IsLiteral>
+		</AssemblyAttribute>
+	</ItemGroup>
+
 	<!-- KSP and Unity load these themselves, so they are never copied to the output. -->
 	<ItemGroup>
 		<Reference Include="Assembly-CSharp" HintPath="$(KSPRoot)\KSP_x64_Data\Managed\Assembly-CSharp.dll" Private="false" />
@@ -48,9 +66,17 @@
 		<Reference Include="UnityEngine.TextRenderingModule" HintPath="$(KSPRoot)\KSP_x64_Data\Managed\UnityEngine.TextRenderingModule.dll" Private="false" />
 	</ItemGroup>
 
+	<!-- The mods it needs, from the same install. Players install these themselves, so they are never copied to the output either. -->
+	<ItemGroup>
+		<Reference Include="ClickThroughBlocker" HintPath="$(KSPRoot)\GameData\000_ClickThroughBlocker\Plugins\ClickThroughBlocker.dll" Private="false" />
+		<Reference Include="ToolbarControl" HintPath="$(KSPRoot)\GameData\001_ToolbarControl\Plugins\ToolbarControl.dll" Private="false" />
+	</ItemGroup>
+
 	<Target Name="CheckKSPRoot" BeforeTargets="ResolveAssemblyReferences">
 		<Error Condition="'$(KSPRoot)' == ''" Text="KSPRoot is not set. Point it at a Kerbal Space Program install in MouseAimFlightRedux.csproj.user or an environment variable." />
 		<Error Condition="'$(KSPRoot)' != '' and !Exists('$(KSPRoot)\KSP_x64_Data\Managed\Assembly-CSharp.dll')" Text="KSPRoot does not look like a Kerbal Space Program install: $(KSPRoot)" />
+		<Error Condition="'$(KSPRoot)' != '' and !Exists('$(KSPRoot)\GameData\000_ClickThroughBlocker\Plugins\ClickThroughBlocker.dll')" Text="ClickThroughBlocker is not installed in $(KSPRoot)" />
+		<Error Condition="'$(KSPRoot)' != '' and !Exists('$(KSPRoot)\GameData\001_ToolbarControl\Plugins\ToolbarControl.dll')" Text="Toolbar Controller is not installed in $(KSPRoot)" />
 	</Target>
 
 	<!-- Puts the built plugin where a linked or copied GameData will load it. -->

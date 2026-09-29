@@ -393,6 +393,6 @@ sealed class TuningOverlay
 		}
 
 		// Draw it
-		windowRect = GUILayout.Window(GetHashCode(), windowRect, drawWindow, "Mouse Aim Tuning");
+		windowRect = ModWindow.Draw(GetHashCode(), windowRect, drawWindow, "Mouse Aim Tuning");
 	}
 }

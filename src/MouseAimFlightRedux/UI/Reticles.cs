@@ -6,9 +6,9 @@ using UnityEngine;
 namespace MouseAimFlightRedux.UI;
 
 /// <summary>
-/// Marker and icon textures, drawn the first time they're needed from signed distance
-/// functions, so no image files ship with the mod. Shapes are shades of grey on
-/// transparent, and tinted when drawn.
+/// Marker textures, drawn the first time they're needed from signed distance functions,
+/// so no image files ship for them. Shapes are shades of grey on transparent, and tinted
+/// when drawn.
 /// </summary>
 static class Reticles
 {
@@ -39,13 +39,11 @@ static class Reticles
 		public readonly Texture2D Crosshair = Render(MARKER_SIZE, new Layer(CrosshairOutline, 0f, OUTLINE_OPACITY), new Layer(CrosshairTips, TIP_SHADE, TIP_OPACITY), new Layer(CrosshairDot));
 		public readonly Texture2D Cross = Render(MARKER_SIZE, new Layer(CrossShape));
 		public readonly Texture2D Dot = Render(MARKER_SIZE, new Layer(DotShape));
-		public readonly Texture2D Icon = Render(ICON_SIZE, new Layer(IconShape));
 	}
 
 	//// Constants
 
 	const int MARKER_SIZE = 128;
-	const int ICON_SIZE = 38;
 
 	/// <summary>
 	/// The crosshair's black parts: its outline and the inner half of each arm.
@@ -72,9 +70,6 @@ static class Reticles
 	static float CrossShape(Vector2 point) => Arms(point, 0.3f, 0.9f, 0.035f);
 
 	static float DotShape(Vector2 point) => point.magnitude - 0.14f;
-
-	/// <summary>The toolbar icon: a ring with a dot in it.</summary>
-	static float IconShape(Vector2 point) => Mathf.Min(Ring(point, 0.72f, 0.14f), point.magnitude - 0.2f);
 
 	/// <summary>
 	/// Distance to the edge of a ring of the given radius and width; negative inside.
@@ -188,7 +183,6 @@ static class Reticles
 	public static Texture2D Crosshair => All.Crosshair;
 	public static Texture2D Cross => All.Cross;
 	public static Texture2D Dot => All.Dot;
-	public static Texture2D Icon => All.Icon;
 
 	public static Texture2D? Nose(ReticleStyle style) => style switch
 	{

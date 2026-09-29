@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The toolbar button can go on Blizzy's toolbar, or both toolbars, picked in Toolbar Controller's settings
+
+### Changed
+
+- Now needs ClickThroughBlocker and Toolbar Controller
+
+### Fixed
+
+- Clicks on the settings window and tuning overlay no longer reach the game behind them
+
 ## [1.5.1] - 2026-09-26
 
 ### Changed

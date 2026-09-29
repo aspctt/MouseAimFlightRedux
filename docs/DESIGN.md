@@ -29,8 +29,10 @@ One addon per flight scene runs mouse aim for the active vessel, since only that
 | `AtmosphereAutopilot.cs` | Atmosphere Autopilot's master switch and surface speed, by reflection | |
 | `UI/Hud.cs` | The on-screen markers | BSD |
 | `UI/SettingsWindow.cs` | Toolbar button and settings window | BSD |
+| `UI/ToolbarRegistration.cs` | Registering the toolbar button with Toolbar Controller | |
+| `UI/ModWindow.cs` | Drawing windows through ClickThroughBlocker | |
 | `UI/TuningOverlay.cs` | The tuning overlay | |
-| `UI/Reticles.cs` | Marker and icon textures | |
+| `UI/Reticles.cs` | Marker textures | |
 | `Settings.cs` | Player settings | |
 | `Control/` | The controller, flight modes and terrain avoidance | |
 
@@ -197,9 +199,17 @@ The default keys stay clear of Atmosphere Autopilot's. Its master switch is P, s
 
 Atmosphere Autopilot is optional and reached by reflection, through public members only: `AtmosphereAutopilot.Instance`, `getVesselModules(Vessel)` and `TopModuleManager.Active`, plus `mainMenuGUIUpdate()` to refresh its toolbar button, and the constant `SyncModuleControlSurface.CSURF_SPD`, the speed its surfaces move at when not set to ease. Checked against 1.6.1. If any is missing or throws, it's left alone for the rest of the session, with one log line.
 
-## Markers and icon
+## Windows and toolbar
 
-Drawn into textures the first time they're needed, from signed distance functions, antialiased over one pixel. No image files ship. Each mipmap is drawn from the shapes at its own size, so markers drawn small stay clean. The nose marker is drawn at half the aim ring's size, so it sits inside it.
+The plugin needs ClickThroughBlocker and Toolbar Controller, both by linuxgurugamer. It declares both as KSP assembly dependencies, so KSP loads them first, and skips the plugin with a warning in the log when either is missing.
+
+- **Windows:** the settings window and the tuning overlay are drawn through ClickThroughBlocker, which locks the game's controls while the pointer is over one, so a click there doesn't also reach the game. Not while mouse aim holds the cursor: nothing can be clicked then, and the pointer held in place over a window would lock keyboard flying, throttle and staging until mouse aim let go.
+- **Toolbar button:** added through Toolbar Controller, which puts it on the stock toolbar, Blizzy's, or both, as the player picks in its settings. It's registered at the main menu, since Toolbar Controller only adds buttons it knows about.
+- **Icons:** Toolbar Controller only loads icons from files, so they ship as `Textures/ToolbarIcon38.png` for the stock toolbar and `Textures/ToolbarIcon24.png` for Blizzy's: a white ring with a dot in it, drawn the same way as the markers.
+
+## Markers
+
+Drawn into textures the first time they're needed, from signed distance functions, antialiased over one pixel. No image files ship for them. Each mipmap is drawn from the shapes at its own size, so markers drawn small stay clean. The nose marker is drawn at half the aim ring's size, so it sits inside it.
 
 The Crosshair nose marker has a white centre dot and four arms with a gap between them. The outer half of each arm is a rounded rectangle of half see-through medium grey. The dot and those tips are outlined in black at 75% opacity, and the inner half of each arm is the same black, so it shows against bright sky and dark ground alike.
 
@@ -226,3 +236,4 @@ With `--logger "console;verbosity=detailed"`, each flight prints its settle time
 - **KSP:** any 1.12 release, built against 1.12.5 for .NET Framework 4.7.2. KSP before 1.8 ran .NET 3.5, so it can't load there.
 - **Ferram Aerospace Research:** detected by assembly name, and the speed-up is skipped.
 - **Atmosphere Autopilot:** detected by assembly name and kept off unless the player lets them fly together, see "Other autopilots".
+- **ClickThroughBlocker, Toolbar Controller:** required, see "Windows and toolbar". Built against ClickThroughBlocker 2.1.10 and Toolbar Controller 0.1.9.

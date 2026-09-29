@@ -1,4 +1,6 @@
-# <p align=center> Mouse Aim Flight Redux </p>
+<p align=center>
+	<img alt="Banner" src="https://i.ibb.co/mrPpcmGy/Mouse-Aim-Flight-Redux-Banner.png">
+</p>
 
 <p align=center>
 	<img alt="Version" src="https://img.shields.io/badge/Version-1.5.1-orange">
@@ -28,13 +30,16 @@ Mouse Aim Flight Redux continues the original Mouse Aim Flight by tetryds and fe
 
 ## Installation
 
-To install, place the GameData folder inside your Kerbal Space Program folder. If asked to overwrite files, please do so.
+To install, place the GameData folder inside your Kerbal Space Program folder, and install the dependencies below. If asked to overwrite files, please do so.
 
 **REMOVE ANY OLD VERSIONS BEFORE INSTALLING**, including the original Mouse Aim Flight.
 
 ## Dependencies
 
-None. Works with [Ferram Aerospace Research](https://github.com/dkavolis/Ferram-Aerospace-Research) out of the box.
+* [ClickThroughBlocker](https://github.com/linuxgurugamer/ClickThroughBlocker), which needs [Harmony](https://github.com/KSPModdingLibs/HarmonyKSP)
+* [Toolbar Controller](https://github.com/linuxgurugamer/ToolbarControl)
+
+Works with [Ferram Aerospace Research](https://github.com/dkavolis/Ferram-Aerospace-Research) out of the box.
 
 SAS and [Atmosphere Autopilot](https://github.com/Boris-Barboris/AtmosphereAutopilot) are kept off while mouse aim is on, and come back on afterwards. To fly with Atmosphere Autopilot's fly-by-wire on, untick "Keep Atmosphere Autopilot Off" in the settings.
 
