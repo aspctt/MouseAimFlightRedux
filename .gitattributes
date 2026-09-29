@@ -17,6 +17,7 @@
 *.cfg text eol=lf
 *.version text eol=lf
 *.ckan text eol=lf
+*.netkan text eol=lf
 *.md text eol=lf
 
 # Binaries, kept byte for byte. Auto-detection already covers these; naming them

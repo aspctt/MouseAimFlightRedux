@@ -1,0 +1,25 @@
+{
+    "spec_version"   : "v1.4",
+    "identifier"     : "MouseAimFlightRedux",
+    "$vref"          : "#/ckan/ksp-avc/MouseAimFlightRedux.version",
+    "$kref"          : "#/ckan/spacedock/4609",
+    "license"        : "restricted",
+    "name"           : "Mouse Aim Flight Redux",
+    "author"         : "aspctt",
+    "abstract"       : "Point your mouse where you want to go and your plane follows. Smooth, easy flying for anything you build.",
+    "resources": {
+        "homepage":   "https://forum.kerbalspaceprogram.com/topic/231839-*",
+        "repository": "https://github.com/aspctt/MouseAimFlightRedux"
+    },
+    "depends": [
+        { "name": "ClickThroughBlocker"   },
+        { "name": "ToolbarController"    }
+    ],
+    "supports" : [
+        { "name" : "AtmosphereAutopilot" }
+    ],
+    "install": [ {
+        "find":       "MouseAimFlightRedux",
+        "install_to": "GameData"
+    } ]
+}
