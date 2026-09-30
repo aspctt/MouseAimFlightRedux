@@ -16,7 +16,7 @@
         { "name": "ToolbarController"    }
     ],
     "supports" : [
-        { "name" : "AtmosphereAutopilot" }
+        { "name": "AtmosphereAutopilot" }
     ],
     "install": [ {
         "find":       "MouseAimFlightRedux",
