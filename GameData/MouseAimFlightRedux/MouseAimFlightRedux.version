@@ -1,7 +1,7 @@
 {
 	"NAME"		: "MouseAimFlightRedux",
 	"URL"		: "https://raw.githubusercontent.com/aspctt/MouseAimFlightRedux/main/MouseAimFlightRedux.version",
-	"DOWNLOAD"	: "https://github.com/aspctt/MouseAimFlightRedux/releases",
+	"DOWNLOAD"	: "https://github.com/aspctt/MouseAimFlightRedux/releases/latest",
 	"CHANGE_LOG_URL"	: "https://raw.githubusercontent.com/aspctt/MouseAimFlightRedux/main/CHANGELOG.md",
 	"VERSION":{
 		"MAJOR":1,
