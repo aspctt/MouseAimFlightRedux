@@ -17,7 +17,7 @@
 
 ## Description
 
-Fly planes with your mouse. Point where you want to go, and Mouse Aim Flight Redux works the pitch, roll and yaw to get you there.
+Fly planes with your mouse. Point where you want to go and Mouse Aim Flight Redux works the pitch, roll and yaw to get you there.
 
 It reads your craft's torque and inertia, so it adapts to whatever you build. It turns hard without overshooting, stays within G and angle of attack limits, and never needs trimming.
 
@@ -67,3 +67,7 @@ The parts that come from the original under the BSD 2-Clause License keep that l
 * yut23 - fixes to the original
 
 Full history is in [CHANGELOG](./CHANGELOG.md).
+
+<p align=center>
+	<a alt="BuyMeACoffee" href="https://buymeacoffee.com/aspctt"><img src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/donate/buymeacoffee-singular_vector.svg"></a>
+</p>

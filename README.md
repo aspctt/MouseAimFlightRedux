@@ -67,3 +67,7 @@ The parts that come from the original under the BSD 2-Clause License keep that l
 * yut23 - fixes to the original
 
 Full history is in [CHANGELOG](./CHANGELOG.md).
+
+<p align=center>
+	<a alt="BuyMeACoffee" href="https://buymeacoffee.com/aspctt"><img src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/donate/buymeacoffee-singular_vector.svg"></a>
+</p>
