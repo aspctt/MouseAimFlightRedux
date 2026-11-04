@@ -1,17 +1,21 @@
-<p align=center>
+<p align="center" style="text-align: center;">
 	<img alt="Banner" src="https://i.ibb.co/mrPpcmGy/Mouse-Aim-Flight-Redux-Banner.png">
 </p>
 
-<p align=center>
+<p align="center" style="text-align: center;">
 	<img alt="Version" src="https://img.shields.io/badge/Version-1.6.0-orange">
 	<img alt="Available for" src="https://img.shields.io/badge/Available_for-KSP_1.12.x-blue">
 	<img alt="Requires" src="https://img.shields.io/badge/Requires-Click_Through_Blocker_%26_Toolbar_Controller-blueviolet">
 	<img alt="License" src="https://img.shields.io/badge/License-All_Rights_Reserved-red">
 </p>
 
-<p align=center>
-	<a href="https://forum.kerbalspaceprogram.com/topic/231839-1125-mouse-aim-flight-redux-fly-planes-with-your-mouse/"><img src="https://cdn.jsdelivr.net/gh/aspctt/MouseAimFlightRedux@main/docs/badges/ksp-forum.svg" alt="Available on the KSP Forums"></a>
-	<a href="https://spacedock.info/mod/4609/Mouse%20Aim%20Flight%20Redux"><img src="https://cdn.jsdelivr.net/gh/aspctt/MouseAimFlightRedux@main/docs/badges/spacedock.svg" alt="Available on SpaceDock"></a>
+<p align="center" style="text-align: center;">
+	<a alt="Buy Me a Coffee" href="https://buymeacoffee.com/aspctt"><img alt="Buy Me a Coffee" height="40" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/compact/donate/buymeacoffee-singular_vector.svg"></a>
+</p>
+
+<p align="center" style="text-align: center;">
+	<a href="https://forum.kerbalspaceprogram.com/topic/231839-1125-mouse-aim-flight-redux-fly-planes-with-your-mouse/"><img src="https://cdn.jsdelivr.net/gh/aspctt/aspctt-badges@main/assets/compact-minimal/available/ksp-forum_vector.svg" alt="Available on the KSP Forums"></a>
+	<a href="https://spacedock.info/mod/4609/Mouse%20Aim%20Flight%20Redux"><img src="https://cdn.jsdelivr.net/gh/aspctt/aspctt-badges@main/assets/compact-minimal/available/spacedock_vector.svg" alt="Available on SpaceDock"></a>
 	<a href="https://github.com/aspctt/MouseAimFlightRedux"><img src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/compact-minimal/available/github_vector.svg" alt="Available on GitHub"></a>
 </p>
 
@@ -67,7 +71,3 @@ The parts that come from the original under the BSD 2-Clause License keep that l
 * yut23 - fixes to the original
 
 Full history is in [CHANGELOG](./CHANGELOG.md).
-
-<p align=center>
-	<a alt="BuyMeACoffee" href="https://buymeacoffee.com/aspctt"><img src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/donate/buymeacoffee-singular_vector.svg"></a>
-</p>
